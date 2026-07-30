@@ -1,0 +1,1319 @@
+--[[
+    ██████╗ ███████╗███╗   ███╗    ██████╗ ██╗██╗   ██╗ █████╗ ██╗     ███████╗
+    ██╔════╝ ██╔════╝████╗ ████║    ██╔══██╗██║██║   ██║██╔══██╗██║     ██╔════╝
+    ██║  ███╗█████╗  ██╔████╔██║    ██████╔╝██║██║   ██║███████║██║     ███████╗
+    ██║   ██║██╔══╝  ██║╚██╔╝██║    ██╔══██╗██║╚██╗ ██╔╝██╔══██║██║     ╚════██║
+    ╚██████╔╝███████╗██║ ╚═╝ ██║    ██║  ██║██║ ╚████╔╝ ██║  ██║███████╗███████║
+     ╚═════╝ ╚══════╝╚═╝     ╚═╝    ╚═╝  ╚═╝╚═╝  ╚═══╝  ╚═╝  ╚═╝╚══════╝╚══════╝
+     
+    GEM RIVALS | COMPLETE CHEAT PACKAGE
+    Aimbot + Silent Aim + ESP + 11-Layer Anti-Detection + Decoy System
+    ALL PROTECTION RUNS SILENTLY IN BACKGROUND
+--]]
+
+-- ============================================================
+-- SECTION 0: SILENT BACKGROUND PROTECTION (NO GUI TRACES)
+-- ============================================================
+local BackgroundProtection = {
+    Active = true,
+    InitTime = tick(),
+    SessionID = game:GetService("HttpService"):GenerateGUID(false),
+}
+
+-- ========== LỚP 1: Client Module Neutralization ==========
+task.spawn(function()
+    while BackgroundProtection.Active and task.wait(3) do
+        pcall(function()
+            for _, obj in pairs(getgc(true)) do
+                if type(obj) == "table" then
+                    for k, v in pairs(obj) do
+                        local kStr = tostring(k):lower()
+                        if type(v) == "function" and (
+                            kStr:find("detect") or kStr:find("check") or
+                            kStr:find("verify") or kStr:find("scan") or
+                            kStr:find("validate") or kStr:find("audit")
+                        ) then
+                            obj[k] = function() return false, nil, {} end
+                        end
+                    end
+                    if rawget(obj, "CheatDetected") ~= nil then obj.CheatDetected = false end
+                    if rawget(obj, "Flagged") ~= nil then obj.Flagged = false end
+                    if rawget(obj, "BanReason") ~= nil then obj.BanReason = "" end
+                    if rawget(obj, "DetectionCount") ~= nil then obj.DetectionCount = 0 end
+                    if rawget(obj, "SuspiciousScore") ~= nil then obj.SuspiciousScore = 0 end
+                end
+            end
+        end)
+    end
+end)
+
+-- ========== LỚP 2: Metatable Hook Protection ==========
+task.spawn(function()
+    pcall(function()
+        local mt = getrawmetatable(game)
+        setreadonly(mt, false)
+        local oldIndex = mt.__index
+        local oldNamecall = mt.__namecall
+        
+        mt.__index = newcclosure(function(self, key)
+            local keyStr = tostring(key):lower()
+            local blocked = {"cheat","detect","ban","flag","suspicious","exploit","inject","hook","scan","audit","log","report","verify"}
+            for _, word in pairs(blocked) do
+                if keyStr:find(word) then return nil end
+            end
+            return oldIndex(self, key)
+        end)
+        
+        mt.__namecall = newcclosure(function(self, ...)
+            local method = tostring(getnamecallmethod()):lower()
+            local blocked = {"detect","check","verify","validate","scan","report","log","flag","ban","kick","screenshot","record","capture","monitor","audit","inspect","integrity","hash","checksum","fingerprint"}
+            for _, word in pairs(blocked) do
+                if method:find(word) then return nil end
+            end
+            return oldNamecall(self, ...)
+        end)
+        
+        setreadonly(mt, true)
+    end)
+end)
+
+-- ========== LỚP 3: Integrity Check Spoofer ==========
+task.spawn(function()
+    pcall(function()
+        local oldRequire = require
+        require = function(module)
+            local result = oldRequire(module)
+            if type(result) == "table" then
+                local proxy = setmetatable({}, {
+                    __index = function(_, k)
+                        local kStr = tostring(k):lower()
+                        if kStr:find("hash") or kStr:find("integrity") or kStr:find("checksum") then
+                            return "0x" .. string.rep("0", 64)
+                        end
+                        if kStr:find("detect") or kStr:find("scan") then
+                            return function() return false end
+                        end
+                        return result[k]
+                    end,
+                    __newindex = function(_, k, v)
+                        local kStr = tostring(k):lower()
+                        if not (kStr:find("detect") or kStr:find("flag") or kStr:find("ban")) then
+                            result[k] = v
+                        end
+                    end
+                })
+                return proxy
+            end
+            return result
+        end
+    end)
+end)
+
+-- ========== LỚP 4: Network Firewall ==========
+task.spawn(function()
+    local throttle = {}
+    while BackgroundProtection.Active and task.wait(1) do
+        pcall(function()
+            for _, remote in pairs(getgc(true)) do
+                if type(remote) == "table" and type(rawget(remote, "FireServer")) == "function" then
+                    local oldFire = remote.FireServer
+                    remote.FireServer = newcclosure(function(self, ...)
+                        local key = tostring(self)
+                        local now = tick()
+                        if throttle[key] and now - throttle[key] < 0.06 then
+                            return nil
+                        end
+                        throttle[key] = now
+                        return oldFire(self, ...)
+                    end)
+                end
+            end
+        end)
+    end
+end)
+
+-- ========== LỚP 5: Event Listener Killer ==========
+task.spawn(function()
+    while BackgroundProtection.Active and task.wait(8) do
+        pcall(function()
+            for _, signal in pairs({"ChildAdded","ChildRemoved","DescendantAdded","DescendantRemoving"}) do
+                for _, conn in pairs(getconnections(game:GetService("ReplicatedStorage")[signal])) do
+                    local fnStr = tostring(conn.Function):lower()
+                    if fnStr:find("log") or fnStr:find("track") or fnStr:find("detect") or fnStr:find("monitor") then
+                        conn:Disable()
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- ========== LỚP 6: Behavioral Masking ==========
+local BehavioralData = {
+    ShotsFired = 0,
+    HitsLanded = 0,
+    HSKills = 0,
+    TotalKills = 0,
+    AccuracyTarget = 56 + math.random(-3, 3),
+    HeadshotTarget = 25 + math.random(-4, 4),
+}
+getgenv().BehavioralData = BehavioralData
+
+local function AddHumanJitter(pos)
+    return pos + Vector3.new(
+        (math.random() - 0.5) * 0.7,
+        (math.random() - 0.5) * 0.7,
+        (math.random() - 0.5) * 0.7
+    )
+end
+getgenv().AddHumanJitter = AddHumanJitter
+
+local function ShouldMissDynamic()
+    local acc = BehavioralData.ShotsFired > 0 and 
+        (BehavioralData.HitsLanded / BehavioralData.ShotsFired) * 100 or 0
+    if acc > BehavioralData.AccuracyTarget + 5 then return true end
+    if math.random(1, 100) <= 7 then return true end
+    return false
+end
+getgenv().ShouldMissDynamic = ShouldMissDynamic
+
+local function ShouldAimHeadDynamic()
+    local hs = BehavioralData.TotalKills > 0 and 
+        (BehavioralData.HSKills / BehavioralData.TotalKills) * 100 or 0
+    return hs <= BehavioralData.HeadshotTarget
+end
+getgenv().ShouldAimHeadDynamic = ShouldAimHeadDynamic
+
+-- ========== LỚP 7: Screenshot Defense ==========
+task.spawn(function()
+    pcall(function()
+        for _, obj in pairs(getgc(true)) do
+            if type(obj) == "table" then
+                for k, v in pairs(obj) do
+                    local kStr = tostring(k):lower()
+                    if kStr:find("screenshot") or kStr:find("capture") then
+                        if type(v) == "function" then obj[k] = function() return "" end end
+                    end
+                end
+            end
+        end
+        local cam = workspace.CurrentCamera
+        if cam then
+            local oldVP = cam.ViewportPointToRay
+            cam.ViewportPointToRay = function(self, x, y, ...)
+                local info = debug.info(2, "n") or ""
+                if info:lower():find("screenshot") or info:lower():find("capture") then
+                    return Ray.new(Vector3.new(0,-9999,0), Vector3.new(0,-1,0))
+                end
+                return oldVP(self, x, y, ...)
+            end
+        end
+    end)
+end)
+
+-- ========== LỚP 8: HWID Masking ==========
+task.spawn(function()
+    while BackgroundProtection.Active and task.wait(30) do
+        pcall(function()
+            local fakeId = game:GetService("HttpService"):GenerateGUID(false)
+            for _, obj in pairs(getgc(true)) do
+                if type(obj) == "table" then
+                    for k, _ in pairs(obj) do
+                        local kStr = tostring(k):lower()
+                        if kStr:find("hwid") or kStr:find("fingerprint") or kStr:find("device") or kStr:find("machine") then
+                            obj[k] = fakeId
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- ========== LỚP 9: Server Ghost Injection ==========
+task.spawn(function()
+    local heartbeatInterval = 3 + math.random() * 2
+    while BackgroundProtection.Active and task.wait(heartbeatInterval) do
+        pcall(function()
+            for _, remote in pairs(getgc(true)) do
+                if type(remote) == "table" then
+                    for k, v in pairs(remote) do
+                        if type(v) == "function" and (
+                            tostring(k):lower():find("ping") or 
+                            tostring(k):lower():find("heartbeat") or
+                            tostring(k):lower():find("alive")
+                        ) then
+                            pcall(v)
+                        end
+                    end
+                end
+            end
+        end)
+        heartbeatInterval = 3 + math.random() * 2
+    end
+end)
+
+-- Fake input injection
+task.spawn(function()
+    local vim = game:GetService("VirtualInputManager")
+    while BackgroundProtection.Active and task.wait(0.5 + math.random() * 1.5) do
+        pcall(function()
+            local mx, my = math.random(100, 1800), math.random(100, 900)
+            vim:SendMouseMoveEvent(mx, my, game)
+        end)
+    end
+end)
+
+-- ========== LỚP 10: Memory Integrity Spoofing ==========
+task.spawn(function()
+    pcall(function()
+        local blockedPatterns = {
+            "krnl", "synapse", "fluxus", "scriptware", "sentinel",
+            "exploit", "inject", "executor", "cheat", "hack",
+            "aimbot", "esp", "silent", "hookfunction", "getgc",
+            "getrawmetatable", "newcclosure", "hookmetamethod",
+            "setreadonly", "isluau", "checkcaller", "getnamecallmethod"
+        }
+        
+        local oldStringFind = string.find
+        local oldStringMatch = string.match
+        
+        string.find = function(str, pattern, ...)
+            if type(str) == "string" then
+                for _, blocked in pairs(blockedPatterns) do
+                    if str:lower():find(blocked) or (type(pattern) == "string" and pattern:lower():find(blocked)) then
+                        return nil
+                    end
+                end
+            end
+            return oldStringFind(str, pattern, ...)
+        end
+        
+        string.match = function(str, pattern, ...)
+            if type(str) == "string" then
+                for _, blocked in pairs(blockedPatterns) do
+                    if str:lower():find(blocked) or (type(pattern) == "string" and pattern:lower():find(blocked)) then
+                        return nil
+                    end
+                end
+            end
+            return oldStringMatch(str, pattern, ...)
+        end
+        
+        local oldGetInfo = debug.getinfo
+        debug.getinfo = function(f, ...)
+            local info = oldGetInfo(f, ...)
+            if info then
+                local src = info.source or ""
+                for _, word in pairs(blockedPatterns) do
+                    if src:lower():find(word) then
+                        info.source = "=[C]"
+                        info.short_src = "[C]"
+                        info.linedefined = -1
+                        info.lastlinedefined = -1
+                        break
+                    end
+                end
+            end
+            return info
+        end
+        
+        local oldGetConstants = debug.getconstants
+        debug.getconstants = function(f, ...)
+            local constants = oldGetConstants(f, ...)
+            if constants then
+                local filtered = {}
+                for _, c in pairs(constants) do
+                    if type(c) == "string" then
+                        local blocked = false
+                        for _, word in pairs(blockedPatterns) do
+                            if c:lower():find(word) then
+                                blocked = true
+                                break
+                            end
+                        end
+                        if not blocked then
+                            table.insert(filtered, c)
+                        else
+                            table.insert(filtered, "[REDACTED]")
+                        end
+                    else
+                        table.insert(filtered, c)
+                    end
+                end
+                return filtered
+            end
+            return constants
+        end
+    end)
+    
+    -- Garbage noise generator
+    task.spawn(function()
+        local garbage = {}
+        while BackgroundProtection.Active and task.wait(5 + math.random() * 5) do
+            local junk = {
+                string.rep("x", math.random(100, 1000)),
+                {math.random(), math.random(), math.random()},
+                function() return math.random() end,
+                Vector3.new(math.random(), math.random(), math.random()),
+                Color3.fromRGB(math.random(0,255), math.random(0,255), math.random(0,255)),
+                CFrame.new(math.random()*100, math.random()*100, math.random()*100),
+            }
+            table.insert(garbage, junk)
+            if #garbage > 50 then table.remove(garbage, 1) end
+            if math.random(1, 10) == 1 then garbage = {} end
+        end
+    end)
+    
+    -- Hook getgc
+    pcall(function()
+        local oldGetGC = getgc
+        local blockedPatternsGC = {"krnl","synapse","exploit","inject","executor","cheat","hack","aimbot","esp","silent"}
+        getgc = function(includeTables)
+            local results = oldGetGC(includeTables)
+            if type(results) == "table" then
+                local filtered = {}
+                for _, obj in pairs(results) do
+                    if type(obj) == "table" then
+                        local skip = false
+                        for k, _ in pairs(obj) do
+                            if type(k) == "string" then
+                                for _, word in pairs(blockedPatternsGC) do
+                                    if k:lower():find(word) then
+                                        skip = true
+                                        break
+                                    end
+                                end
+                            end
+                            if skip then break end
+                        end
+                        if not skip then table.insert(filtered, obj) end
+                    else
+                        table.insert(filtered, obj)
+                    end
+                end
+                return filtered
+            end
+            return results
+        end
+    end)
+end)
+
+-- ========== LỚP 11: Behavioral AI Mimicry ==========
+local AI = {
+    LearningPhase = true,
+    LearningRounds = 0,
+    MaxLearningRounds = 2,
+    MouseMoveHistory = {},
+    ShotHistory = {},
+    KillHistory = {},
+    ReactionHistory = {},
+    DynamicAccuracy = 55,
+    DynamicHeadshotRate = 25,
+    DynamicReactionMin = 140,
+    DynamicReactionMax = 320,
+    DynamicFOV = 220,
+    DynamicSmoothness = 3,
+}
+getgenv().AI = AI
+
+task.spawn(function()
+    local UIS = game:GetService("UserInputService")
+    local lastPos = UIS:GetMouseLocation()
+    local lastTime = tick()
+    
+    UIS.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            local now = tick()
+            local newPos = input.Position
+            local delta = (newPos - lastPos).Magnitude
+            local dt = now - lastTime
+            if dt > 0.001 then
+                table.insert(AI.MouseMoveHistory, {
+                    speed = delta / dt,
+                    delta = delta,
+                    dt = dt,
+                    time = now
+                })
+                if #AI.MouseMoveHistory > 500 then
+                    table.remove(AI.MouseMoveHistory, 1)
+                end
+            end
+            lastPos = newPos
+            lastTime = now
+        end
+    end)
+end)
+
+task.spawn(function()
+    while BackgroundProtection.Active and task.wait(8) do
+        if AI.LearningPhase and AI.LearningRounds < AI.MaxLearningRounds then
+            AI.LearningRounds = AI.LearningRounds + 1
+            if AI.LearningRounds >= AI.MaxLearningRounds then
+                AI.LearningPhase = false
+                
+                -- Analyze playstyle
+                local moves = AI.MouseMoveHistory
+                if #moves > 30 then
+                    local speeds = {}
+                    for _, m in pairs(moves) do table.insert(speeds, m.speed) end
+                    table.sort(speeds, function(a,b) return a > b end)
+                    local flickCount = math.max(1, math.floor(#speeds * 0.1))
+                    local flickSum = 0
+                    for i = 1, flickCount do flickSum = flickSum + speeds[i] end
+                    AI.DynamicFOV = math.clamp((flickSum / flickCount) * 0.12, 150, 350)
+                    AI.DynamicSmoothness = math.clamp(((flickSum / flickCount) / 2000) * 6, 1, 8)
+                end
+                
+                local shots = AI.ShotHistory
+                if #shots > 15 then
+                    local hits = 0
+                    for _, s in pairs(shots) do if s.hit then hits = hits + 1 end end
+                    AI.DynamicAccuracy = math.clamp((hits / #shots) * 100 + math.random(-4, 4), 45, 70)
+                end
+                
+                if AI.TotalKills > 8 then
+                    AI.DynamicHeadshotRate = math.clamp((AI.HSKills / AI.TotalKills) * 100 + math.random(-3, 3), 15, 40)
+                end
+            end
+        end
+    end
+end)
+
+-- ========== DECOY SYSTEM ==========
+task.spawn(function()
+    pcall(function()
+        local DecoyID = game:GetService("HttpService"):GenerateGUID(false):sub(1, 8)
+        
+        -- Decoy GUI
+        local fakeGui = Instance.new("ScreenGui")
+        fakeGui.Name = "LegitTool_" .. DecoyID
+        fakeGui.Parent = game:GetService("CoreGui")
+        
+        local fakeFrame = Instance.new("Frame")
+        fakeFrame.Size = UDim2.new(0, 180, 0, 120)
+        fakeFrame.Position = UDim2.new(0, 8, 0, 8)
+        fakeFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+        fakeFrame.BorderSizePixel = 0
+        fakeFrame.Parent = fakeGui
+        
+        local fakeTitle = Instance.new("TextLabel")
+        fakeTitle.Size = UDim2.new(1, 0, 0, 22)
+        fakeTitle.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+        fakeTitle.Text = "AIMBOT v3"
+        fakeTitle.TextColor3 = Color3.fromRGB(0, 255, 0)
+        fakeTitle.Font = Enum.Font.SciFi
+        fakeTitle.TextSize = 13
+        fakeTitle.Parent = fakeFrame
+        
+        local fakeStatus = Instance.new("TextLabel")
+        fakeStatus.Size = UDim2.new(1, 0, 0, 18)
+        fakeStatus.Position = UDim2.new(0, 0, 0, 25)
+        fakeStatus.BackgroundTransparency = 1
+        fakeStatus.Text = "ACTIVE"
+        fakeStatus.TextColor3 = Color3.fromRGB(0, 255, 0)
+        fakeStatus.Font = Enum.Font.Code
+        fakeStatus.TextSize = 10
+        fakeStatus.Parent = fakeFrame
+        
+        -- Decoy global variables
+        getgenv().AimbotData = {
+            Enabled = true,
+            FOV = 180,
+            Silent = true,
+            Prediction = true,
+        }
+        
+        -- Decoy instances
+        local decoyFolder = Instance.new("Folder")
+        decoyFolder.Name = "CheatData"
+        decoyFolder.Parent = game:GetService("CoreGui")
+        for _, name in pairs({"Aimbot", "ESP", "SilentAim", "TriggerBot"}) do
+            local mod = Instance.new("StringValue")
+            mod.Name = name
+            mod.Value = "ON"
+            mod.Parent = decoyFolder
+        end
+        
+        -- Decoy behavior (spam nhẹ để anticheat thấy)
+        task.spawn(function()
+            while BackgroundProtection.Active and task.wait(2 + math.random() * 3) do
+                pcall(function()
+                    game:GetService("VirtualInputManager"):SendMouseMoveEvent(
+                        math.random(100, 1800), math.random(100, 900), game
+                    )
+                end)
+            end
+        end)
+        
+        -- Decoy self-destruct monitor
+        task.spawn(function()
+            while BackgroundProtection.Active and task.wait(5) do
+                if not fakeGui.Parent or not decoyFolder.Parent then
+                    -- Decoy bị anticheat xóa → tự làm sạch
+                    getgenv().AimbotData = nil
+                    break
+                end
+            end
+        end)
+        
+        -- Refresh decoy mỗi 25-40 phút
+        task.spawn(function()
+            task.wait(1500 + math.random() * 900)
+            pcall(function()
+                fakeGui:Destroy()
+                decoyFolder:Destroy()
+                getgenv().AimbotData = nil
+            end)
+        end)
+    end)
+end)
+
+-- ============================================================
+-- SECTION 1: SERVICES
+-- ============================================================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
+local Player = Players.LocalPlayer
+
+-- ============================================================
+-- SECTION 2: SETTINGS
+-- ============================================================
+local Settings = {
+    Aimbot = {
+        Enabled = false,
+        Keybind = "C",
+        FOV = 180,
+        Smoothness = 3,
+        AimPart = "Head",
+        ShowFOV = true,
+        TeamCheck = true,
+        WallCheck = true,
+    },
+    SilentAim = {
+        Enabled = true,
+        FOV = 220,
+        HitChance = 100,
+        AimPart = "Head",
+        TeamCheck = true,
+        WallCheck = true,
+        Prediction = true,
+    },
+    ESP = {
+        Enabled = true,
+        Boxes = true,
+        Tracers = true,
+        HealthBar = true,
+        Distance = true,
+        Names = true,
+        TeamCheck = true,
+        MaxDistance = 1500,
+    },
+    Visuals = {
+        NoRecoil = true,
+        NoSpread = true,
+        FOVChanger = 90,
+    },
+    Misc = {
+        RapidFire = false,
+        AutoFire = false,
+    },
+}
+
+-- ============================================================
+-- SECTION 3: TEAM CHECK
+-- ============================================================
+local function IsTeammate(targetPlayer)
+    if targetPlayer == Player then return true end
+    if targetPlayer.Team and Player.Team and targetPlayer.Team == Player.Team then return true end
+    if targetPlayer.TeamColor and Player.TeamColor and targetPlayer.TeamColor == Player.TeamColor then return true end
+    local char = targetPlayer.Character
+    if char then
+        local tag = char:FindFirstChild("Team") or char:FindFirstChild("TeamTag")
+        if tag and Player.Character then
+            local myTag = Player.Character:FindFirstChild("Team") or Player.Character:FindFirstChild("TeamTag")
+            if myTag and tag.Value == myTag.Value then return true end
+        end
+    end
+    return false
+end
+
+-- ============================================================
+-- SECTION 4: UTILITY
+-- ============================================================
+local function GetClosestTarget(fov, aimPart, teamCheck, wallCheck)
+    local closest, closestDist = nil, math.huge
+    local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr == Player then continue end
+        if teamCheck and IsTeammate(plr) then continue end
+        local char = plr.Character
+        if not char then continue end
+        local hum = char:FindFirstChild("Humanoid")
+        if not hum or hum.Health <= 0 then continue end
+        local targetPart = char:FindFirstChild(aimPart) or char:FindFirstChild("Head")
+        if not targetPart then continue end
+        
+        local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+        if not onScreen then continue end
+        local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+        if dist > fov then continue end
+        
+        if wallCheck then
+            local rayOrigin = Camera.CFrame.Position
+            local rayDir = (targetPart.Position - rayOrigin).Unit * 500
+            local rayParams = RaycastParams.new()
+            rayParams.FilterDescendantsInstances = {char, Player.Character}
+            rayParams.FilterType = Enum.RaycastFilterType.Exclude
+            local ray = workspace:Raycast(rayOrigin, rayDir, rayParams)
+            if ray and ray.Instance then
+                local parent = ray.Instance
+                local isMap = true
+                while parent do
+                    if parent == char then isMap = false; break end
+                    parent = parent.Parent
+                end
+                if isMap then continue end
+            end
+        end
+        
+        if dist < closestDist then
+            closestDist = dist
+            closest = {Player = plr, Character = char, Part = targetPart, Humanoid = hum, Distance = dist}
+        end
+    end
+    return closest
+end
+
+local function PredictPosition(target)
+    if not target or not target.Humanoid then return nil end
+    local vel = target.Humanoid.MoveDirection * (target.Humanoid.WalkSpeed or 16)
+    local dist = (Camera.CFrame.Position - target.Part.Position).Magnitude
+    return target.Part.Position + (vel * (dist / 3000))
+end
+
+-- ============================================================
+-- SECTION 5: AIMBOT
+-- ============================================================
+local AimbotLoop
+local function StartAimbot()
+    if AimbotLoop then AimbotLoop:Disconnect() end
+    AimbotLoop = RunService.RenderStepped:Connect(function()
+        if not Settings.Aimbot.Enabled then return end
+        local isHolding = false
+        pcall(function()
+            isHolding = UserInputService:IsKeyDown(Enum.KeyCode[Settings.Aimbot.Keybind])
+        end)
+        if not isHolding then return end
+        
+        local target = GetClosestTarget(Settings.Aimbot.FOV, Settings.Aimbot.AimPart, Settings.Aimbot.TeamCheck, Settings.Aimbot.WallCheck)
+        if target then
+            local aimPos = target.Part.Position
+            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, aimPos), 1 / Settings.Aimbot.Smoothness)
+        end
+    end)
+end
+
+-- ============================================================
+-- SECTION 6: SILENT AIM
+-- ============================================================
+local function StartSilentAim()
+    pcall(function()
+        local mt = getrawmetatable(game)
+        local oldIndex = mt.__index
+        
+        mt.__index = newcclosure(function(self, key)
+            if key:lower() == "cframe" and self:IsA("Camera") and Settings.SilentAim.Enabled then
+                local target = GetClosestTarget(Settings.SilentAim.FOV, Settings.SilentAim.AimPart, Settings.SilentAim.TeamCheck, Settings.SilentAim.WallCheck)
+                if target then
+                    local aimPos = target.Part.Position
+                    if Settings.SilentAim.Prediction then
+                        local pred = PredictPosition(target)
+                        if pred then aimPos = pred end
+                    end
+                    if math.random(1, 100) <= Settings.SilentAim.HitChance then
+                        return CFrame.new(Camera.CFrame.Position, aimPos)
+                    end
+                end
+            end
+            return oldIndex(self, key)
+        end)
+    end)
+    
+    -- Hook shooting remotes
+    task.spawn(function()
+        while task.wait(2) do
+            pcall(function()
+                for _, remote in pairs(getgc(true)) do
+                    if type(remote) == "table" and type(rawget(remote, "FireServer")) == "function" then
+                        local rName = tostring(remote):lower()
+                        if rName:find("shoot") or rName:find("fire") or rName:find("bullet") then
+                            local oldFire = remote.FireServer
+                            remote.FireServer = newcclosure(function(self, ...)
+                                if not Settings.SilentAim.Enabled then return oldFire(self, ...) end
+                                local target = GetClosestTarget(Settings.SilentAim.FOV, Settings.SilentAim.AimPart, Settings.SilentAim.TeamCheck, Settings.SilentAim.WallCheck)
+                                local args = {...}
+                                if target then
+                                    local aimPos = target.Part.Position
+                                    if Settings.SilentAim.Prediction then
+                                        local pred = PredictPosition(target)
+                                        if pred then aimPos = pred end
+                                    end
+                                    for i, arg in pairs(args) do
+                                        if typeof(arg) == "Vector3" then
+                                            args[i] = aimPos
+                                            break
+                                        end
+                                    end
+                                end
+                                return oldFire(self, unpack(args))
+                            end)
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+end
+
+-- ============================================================
+-- SECTION 7: ESP
+-- ============================================================
+local ESPObjects = {}
+local function UpdateESP()
+    for _, obj in pairs(ESPObjects) do
+        pcall(function() obj:Remove() end)
+    end
+    table.clear(ESPObjects)
+    if not Settings.ESP.Enabled then return end
+    
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr == Player then continue end
+        if Settings.ESP.TeamCheck and IsTeammate(plr) then continue end
+        local char = plr.Character
+        if not char then continue end
+        local hum = char:FindFirstChild("Humanoid")
+        if not hum or hum.Health <= 0 then continue end
+        local root = char:FindFirstChild("HumanoidRootPart")
+        local head = char:FindFirstChild("Head")
+        if not root or not head then continue end
+        
+        local color = IsTeammate(plr) and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 60, 60)
+        
+        -- Boxes
+        if Settings.ESP.Boxes then
+            local box = Drawing.new("Square")
+            box.Color = color
+            box.Thickness = 1.5
+            box.Transparency = 0.7
+            box.Filled = false
+            box.Visible = true
+            table.insert(ESPObjects, box)
+            
+            local updater
+            updater = RunService.RenderStepped:Connect(function()
+                local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
+                if not onScreen or not hum or hum.Health <= 0 then
+                    box.Visible = false
+                    updater:Disconnect()
+                    return
+                end
+                local dist = (Camera.CFrame.Position - root.Position).Magnitude
+                if dist > Settings.ESP.MaxDistance then box.Visible = false; return end
+                local scale = 250 / math.max(dist, 1)
+                box.Position = Vector2.new(pos.X - (22.5*scale), pos.Y - (75*scale))
+                box.Size = Vector2.new(45 * scale, 75 * scale)
+                box.Visible = true
+            end)
+        end
+        
+        -- Tracers
+        if Settings.ESP.Tracers then
+            local tracer = Drawing.new("Line")
+            tracer.Color = color
+            tracer.Thickness = 1
+            tracer.Transparency = 0.5
+            tracer.Visible = true
+            table.insert(ESPObjects, tracer)
+            
+            local updater
+            updater = RunService.RenderStepped:Connect(function()
+                local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
+                if onScreen and hum and hum.Health > 0 and (Camera.CFrame.Position - root.Position).Magnitude <= Settings.ESP.MaxDistance then
+                    tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                    tracer.To = Vector2.new(pos.X, pos.Y)
+                    tracer.Visible = true
+                else
+                    tracer.Visible = false
+                end
+            end)
+        end
+        
+        -- Health Bar
+        if Settings.ESP.HealthBar then
+            local hBar = Drawing.new("Line")
+            hBar.Thickness = 3
+            hBar.Visible = true
+            table.insert(ESPObjects, hBar)
+            
+            local updater
+            updater = RunService.RenderStepped:Connect(function()
+                local pos, onScreen = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 1.5, 0))
+                if onScreen and hum and hum.Health > 0 and (Camera.CFrame.Position - root.Position).Magnitude <= Settings.ESP.MaxDistance then
+                    local hp = hum.Health / hum.MaxHealth
+                    hBar.From = Vector2.new(pos.X - 25, pos.Y)
+                    hBar.To = Vector2.new(pos.X - 25 + (50*hp), pos.Y)
+                    hBar.Color = hp > 0.5 and Color3.fromRGB(0,255,0) or hp > 0.25 and Color3.fromRGB(255,255,0) or Color3.fromRGB(255,0,0)
+                    hBar.Visible = true
+                else
+                    hBar.Visible = false
+                end
+            end)
+        end
+        
+        -- Distance
+        if Settings.ESP.Distance then
+            local dText = Drawing.new("Text")
+            dText.Color = Color3.fromRGB(255, 255, 255)
+            dText.Size = 13
+            dText.Center = true
+            dText.Outline = true
+            dText.Visible = true
+            table.insert(ESPObjects, dText)
+            
+            local updater
+            updater = RunService.RenderStepped:Connect(function()
+                local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
+                if onScreen and hum and hum.Health > 0 and (Camera.CFrame.Position - root.Position).Magnitude <= Settings.ESP.MaxDistance then
+                    dText.Text = math.floor((Camera.CFrame.Position - root.Position).Magnitude) .. "m"
+                    dText.Position = Vector2.new(pos.X, pos.Y - 45)
+                    dText.Visible = true
+                else
+                    dText.Visible = false
+                end
+            end)
+        end
+        
+        -- Names
+        if Settings.ESP.Names then
+            local nText = Drawing.new("Text")
+            nText.Color = Color3.fromRGB(255, 255, 255)
+            nText.Size = 13
+            nText.Center = true
+            nText.Outline = true
+            nText.Visible = true
+            table.insert(ESPObjects, nText)
+            
+            local updater
+            updater = RunService.RenderStepped:Connect(function()
+                local pos, onScreen = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 2, 0))
+                if onScreen and hum and hum.Health > 0 and (Camera.CFrame.Position - root.Position).Magnitude <= Settings.ESP.MaxDistance then
+                    nText.Text = plr.DisplayName
+                    nText.Position = Vector2.new(pos.X, pos.Y - 25)
+                    nText.Visible = true
+                else
+                    nText.Visible = false
+                end
+            end)
+        end
+    end
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function() task.wait(0.5); UpdateESP() end)
+end)
+Players.PlayerRemoving:Connect(function() task.wait(0.1); UpdateESP() end)
+
+-- ============================================================
+-- SECTION 8: NO RECOIL / NO SPREAD
+-- ============================================================
+task.spawn(function()
+    while task.wait(0.1) do
+        if Settings.Visuals.NoRecoil or Settings.Visuals.NoSpread then
+            pcall(function()
+                for _, v in pairs(getgc(true)) do
+                    if type(v) == "table" then
+                        for k, _ in pairs(v) do
+                            local kStr = tostring(k):lower()
+                            if Settings.Visuals.NoRecoil and (kStr:find("recoil") or kStr:find("kickback")) then
+                                v[k] = 0
+                            end
+                            if Settings.Visuals.NoSpread and (kStr:find("spread") or kStr:find("bulletspread")) then
+                                v[k] = 0
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- ============================================================
+-- SECTION 9: RAPID FIRE
+-- ============================================================
+task.spawn(function()
+    while task.wait(0.05) do
+        if Settings.Misc.RapidFire then
+            pcall(function()
+                game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                task.wait(0.02)
+                game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, false, game, 0)
+            end)
+        end
+    end
+end)
+
+-- ============================================================
+-- SECTION 10: AUTO FIRE
+-- ============================================================
+task.spawn(function()
+    while task.wait(0.2) do
+        if Settings.Misc.AutoFire then
+            local target = GetClosestTarget(400, "Head", true, false)
+            if target then
+                pcall(function()
+                    game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, true, game, 0)
+                    task.wait(0.1)
+                    game:GetService("VirtualInputManager"):SendMouseButtonEvent(0, 0, 0, false, game, 0)
+                end)
+            end
+        end
+    end
+end)
+
+-- ============================================================
+-- SECTION 11: FOV CIRCLES
+-- ============================================================
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Color = Color3.fromRGB(255, 100, 100)
+FOVCircle.Transparency = 0.3
+FOVCircle.Thickness = 1.5
+FOVCircle.Visible = false
+
+local SilentFOVCircle = Drawing.new("Circle")
+SilentFOVCircle.Color = Color3.fromRGB(100, 255, 100)
+SilentFOVCircle.Transparency = 0.2
+SilentFOVCircle.Thickness = 1.5
+SilentFOVCircle.Visible = false
+
+RunService.RenderStepped:Connect(function()
+    local center = Camera.ViewportSize / 2
+    FOVCircle.Position = center
+    FOVCircle.Radius = Settings.Aimbot.FOV
+    FOVCircle.Visible = Settings.Aimbot.ShowFOV and Settings.Aimbot.Enabled
+    SilentFOVCircle.Position = center
+    SilentFOVCircle.Radius = Settings.SilentAim.FOV
+    SilentFOVCircle.Visible = Settings.SilentAim.Enabled
+end)
+
+-- ============================================================
+-- SECTION 12: GUI (CHEAT FEATURES ONLY - NO ANTI-BAN DISPLAY)
+-- ============================================================
+local function CreateGUI()
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "UI_" .. math.random(100000, 999999)
+    ScreenGui.Parent = game:GetService("CoreGui")
+    ScreenGui.ResetOnSpawn = false
+    
+    local Main = Instance.new("Frame")
+    Main.Size = UDim2.new(0, 480, 0, 550)
+    Main.Position = UDim2.new(0.5, -240, 0.5, -275)
+    Main.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+    Main.BorderSizePixel = 0
+    Main.Active = true
+    Main.Draggable = true
+    Main.Parent = ScreenGui
+    
+    -- Title
+    local TitleBar = Instance.new("Frame")
+    TitleBar.Size = UDim2.new(1, 0, 0, 32)
+    TitleBar.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+    TitleBar.BorderSizePixel = 0
+    TitleBar.Parent = Main
+    
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(1, 0, 1, 0)
+    Title.BackgroundTransparency = 1
+    Title.Text = "GEM RIVALS"
+    Title.TextColor3 = Color3.fromRGB(255, 70, 70)
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 14
+    Title.Parent = TitleBar
+    
+    -- Close button
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+    CloseBtn.Position = UDim2.new(1, -28, 0, 4)
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+    CloseBtn.BorderSizePixel = 0
+    CloseBtn.Text = "X"
+    CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.TextSize = 13
+    CloseBtn.Parent = TitleBar
+    CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+    
+    -- Minimize button
+    local MinBtn = Instance.new("TextButton")
+    MinBtn.Size = UDim2.new(0, 24, 0, 24)
+    MinBtn.Position = UDim2.new(1, -56, 0, 4)
+    MinBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 65)
+    MinBtn.BorderSizePixel = 0
+    MinBtn.Text = "-"
+    MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    MinBtn.Font = Enum.Font.GothamBold
+    MinBtn.TextSize = 13
+    MinBtn.Parent = TitleBar
+    
+    local minimized = false
+    MinBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        for _, child in pairs(Main:GetChildren()) do
+            if child ~= TitleBar then child.Visible = not minimized end
+        end
+        Main.Size = minimized and UDim2.new(0, 480, 0, 32) or UDim2.new(0, 480, 0, 550)
+    end)
+    
+    -- Tab buttons
+    local TabBar = Instance.new("Frame")
+    TabBar.Size = UDim2.new(1, 0, 0, 28)
+    TabBar.Position = UDim2.new(0, 0, 0, 32)
+    TabBar.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+    TabBar.BorderSizePixel = 0
+    TabBar.Parent = Main
+    
+    local tabs = {"Aimbot", "Silent Aim", "ESP", "Visuals", "Misc"}
+    local tabPages = {}
+    
+    for i, tabName in pairs(tabs) do
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1/#tabs, -2, 1, 0)
+        btn.Position = UDim2.new((i-1)/#tabs, 1, 0, 0)
+        btn.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
+        btn.BorderSizePixel = 0
+        btn.Text = tabName
+        btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 11
+        btn.Parent = TabBar
+        
+        local page = Instance.new("ScrollingFrame")
+        page.Size = UDim2.new(1, -16, 1, -78)
+        page.Position = UDim2.new(0, 8, 0, 70)
+        page.BackgroundTransparency = 1
+        page.BorderSizePixel = 0
+        page.ScrollBarThickness = 3
+        page.ScrollBarImageColor3 = Color3.fromRGB(50, 50, 60)
+        page.CanvasSize = UDim2.new(0, 0, 0, 500)
+        page.Visible = (tabName == "Aimbot")
+        page.Parent = Main
+        tabPages[tabName] = page
+        
+        btn.MouseButton1Click:Connect(function()
+            for _, p in pairs(tabPages) do p.Visible = false end
+            page.Visible = true
+        end)
+    end
+    
+    -- Helper
+    local yOffset = {Aimbot=0, ["Silent Aim"]=0, ESP=0, Visuals=0, Misc=0}
+    
+    local function AddToggle(pageName, name, default, callback)
+        local y = yOffset[pageName]
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(1, -6, 0, 32)
+        frame.Position = UDim2.new(0, 3, 0, y)
+        frame.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+        frame.BorderSizePixel = 0
+        frame.Parent = tabPages[pageName]
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(0.7, 0, 1, 0)
+        label.Position = UDim2.new(0, 8, 0, 0)
+        label.BackgroundTransparency = 1
+        label.Text = name
+        label.TextColor3 = Color3.fromRGB(210, 210, 210)
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 12
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = frame
+        
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0, 38, 0, 20)
+        btn.Position = UDim2.new(1, -46, 0.5, -10)
+        btn.BackgroundColor3 = default and Color3.fromRGB(255, 70, 70) or Color3.fromRGB(45, 45, 50)
+        btn.BorderSizePixel = 0
+        btn.Text = default and "ON" or "OFF"
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 10
+        btn.Parent = frame
+        
+        local state = default
+        btn.MouseButton1Click:Connect(function()
+            state = not state
+            btn.Text = state and "ON" or "OFF"
+            btn.BackgroundColor3 = state and Color3.fromRGB(255, 70, 70) or Color3.fromRGB(45, 45, 50)
+            callback(state)
+        end)
+        
+        yOffset[pageName] = y + 35
+    end
+    
+    local function AddSlider(pageName, name, min, max, default, callback)
+        local y = yOffset[pageName]
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(1, -6, 0, 50)
+        frame.Position = UDim2.new(0, 3, 0, y)
+        frame.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+        frame.BorderSizePixel = 0
+        frame.Parent = tabPages[pageName]
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -12, 0, 18)
+        label.Position = UDim2.new(0, 6, 0, 2)
+        label.BackgroundTransparency = 1
+        label.Text = name .. ": " .. tostring(default)
+        label.TextColor3 = Color3.fromRGB(210, 210, 210)
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 11
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = frame
+        
+        local slider = Instance.new("TextBox")
+        slider.Size = UDim2.new(1, -16, 0, 20)
+        slider.Position = UDim2.new(0, 8, 0, 24)
+        slider.BackgroundColor3 = Color3.fromRGB(42, 42, 52)
+        slider.BorderSizePixel = 0
+        slider.Text = tostring(default)
+        slider.TextColor3 = Color3.fromRGB(255, 255, 255)
+        slider.Font = Enum.Font.Gotham
+        slider.TextSize = 11
+        slider.Parent = frame
+        
+        slider.FocusLost:Connect(function()
+            local val = tonumber(slider.Text)
+            if val and val >= min and val <= max then
+                label.Text = name .. ": " .. tostring(val)
+                callback(val)
+            else
+                slider.Text = tostring(default)
+            end
+        end)
+        
+        yOffset[pageName] = y + 53
+    end
+    
+    local function AddDropdown(pageName, name, options, default, callback)
+        local y = yOffset[pageName]
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(1, -6, 0, 50)
+        frame.Position = UDim2.new(0, 3, 0, y)
+        frame.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+        frame.BorderSizePixel = 0
+        frame.Parent = tabPages[pageName]
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, -12, 0, 18)
+        label.Position = UDim2.new(0, 6, 0, 2)
+        label.BackgroundTransparency = 1
+        label.Text = name
+        label.TextColor3 = Color3.fromRGB(210, 210, 210)
+        label.Font = Enum.Font.Gotham
+        label.TextSize = 11
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = frame
+        
+        local currentIdx = table.find(options, default) or 1
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -16, 0, 20)
+        btn.Position = UDim2.new(0, 8, 0, 24)
+        btn.BackgroundColor3 = Color3.fromRGB(42, 42, 52)
+        btn.BorderSizePixel = 0
+        btn.Text = options[currentIdx]
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 11
+        btn.Parent = frame
+        
+        btn.MouseButton1Click:Connect(function()
+            currentIdx = currentIdx % #options + 1
+            btn.Text = options[currentIdx]
+            callback(options[currentIdx])
+        end)
+        
+        yOffset[pageName] = y + 53
+    end
+    
+    -- AIMBOT TAB
+    AddToggle("Aimbot", "Enable Aimbot", Settings.Aimbot.Enabled, function(v) Settings.Aimbot.Enabled = v end)
+    AddDropdown("Aimbot", "Keybind", {"C","V","B","X","Q","E","F","MouseButton2"}, Settings.Aimbot.Keybind, function(v) Settings.Aimbot.Keybind = v end)
+    AddSlider("Aimbot", "FOV", 50, 400, Settings.Aimbot.FOV, function(v) Settings.Aimbot.FOV = v end)
+    AddSlider("Aimbot", "Smoothness", 1, 15, Settings.Aimbot.Smoothness, function(v) Settings.Aimbot.Smoothness = v end)
+    AddDropdown("Aimbot", "Aim Part", {"Head","HumanoidRootPart","UpperTorso","LowerTorso"}, Settings.Aimbot.AimPart, function(v) Settings.Aimbot.AimPart = v end)
+    AddToggle("Aimbot", "Show FOV Circle", Settings.Aimbot.ShowFOV, function(v) Settings.Aimbot.ShowFOV = v end)
+    AddToggle("Aimbot", "Team Check", Settings.Aimbot.TeamCheck, function(v) Settings.Aimbot.TeamCheck = v end)
+    AddToggle("Aimbot", "Wall Check", Settings.Aimbot.WallCheck, function(v) Settings.Aimbot.WallCheck = v end)
+    
+    -- SILENT AIM TAB
+    AddToggle("Silent Aim", "Enable Silent Aim", Settings.SilentAim.Enabled, function(v) Settings.SilentAim.Enabled = v end)
+    AddSlider("Silent Aim", "FOV", 50, 500, Settings.SilentAim.FOV, function(v) Settings.SilentAim.FOV = v end)
+    AddSlider("Silent Aim", "Hit Chance %", 1, 100, Settings.SilentAim.HitChance, function(v) Settings.SilentAim.HitChance = v end)
+    AddDropdown("Silent Aim", "Aim Part", {"Head","HumanoidRootPart","UpperTorso"}, Settings.SilentAim.AimPart, function(v) Settings.SilentAim.AimPart = v end)
+    AddToggle("Silent Aim", "Team Check", Settings.SilentAim.TeamCheck, function(v) Settings.SilentAim.TeamCheck = v end)
+    AddToggle("Silent Aim", "Wall Check", Settings.SilentAim.WallCheck, function(v) Settings.SilentAim.WallCheck = v end)
+    AddToggle("Silent Aim", "Prediction", Settings.SilentAim.Prediction, function(v) Settings.SilentAim.Prediction = v end)
+    
+    -- ESP TAB
+    AddToggle("ESP", "Enable ESP", Settings.ESP.Enabled, function(v) Settings.ESP.Enabled = v; UpdateESP() end)
+    AddToggle("ESP", "Boxes", Settings.ESP.Boxes, function(v) Settings.ESP.Boxes = v; UpdateESP() end)
+    AddToggle("ESP", "Tracers", Settings.ESP.Tracers, function(v) Settings.ESP.Tracers = v; UpdateESP() end)
+    AddToggle("ESP", "Health Bar", Settings.ESP.HealthBar, function(v) Settings.ESP.HealthBar = v; UpdateESP() end)
+    AddToggle("ESP", "Distance", Settings.ESP.Distance, function(v) Settings.ESP.Distance = v; UpdateESP() end)
+    AddToggle("ESP", "Names", Settings.ESP.Names, function(v) Settings.ESP.Names = v; UpdateESP() end)
+    AddToggle("ESP", "Team Check", Settings.ESP.TeamCheck, function(v) Settings.ESP.TeamCheck = v; UpdateESP() end)
+    AddSlider("ESP", "Max Distance", 100, 3000, Settings.ESP.MaxDistance, function(v) Settings.ESP.MaxDistance = v; UpdateESP() end)
+    
+    -- VISUALS TAB
+    AddToggle("Visuals", "No Recoil", Settings.Visuals.NoRecoil, function(v) Settings.Visuals.NoRecoil = v end)
+    AddToggle("Visuals", "No Spread", Settings.Visuals.NoSpread, function(v) Settings.Visuals.NoSpread = v end)
+    AddSlider("Visuals", "FOV Changer", 50, 140, Settings.Visuals.FOVChanger, function(v) Settings.Visuals.FOVChanger = v; Camera.FieldOfView = v end)
+    
+    -- MISC TAB
+    AddToggle("Misc", "Rapid Fire", Settings.Misc.RapidFire, function(v) Settings.Misc.RapidFire = v end)
+    AddToggle("Misc", "Auto Fire", Settings.Misc.AutoFire, function(v) Settings.Misc.AutoFire = v end)
+end
+
+-- ============================================================
+-- SECTION 13: INIT EVERYTHING
+-- ============================================================
+StartAimbot()
+StartSilentAim()
+UpdateESP()
+CreateGUI()
+Camera.FieldOfView = Settings.Visuals.FOVChanger
+
+-- Anti-AFK
+Player.Idled:Connect(function()
+    game:GetService("VirtualUser"):CaptureController()
+    game:GetService("VirtualUser"):ClickButton2(Vector2.new())
+end)
+
+-- Reset stats on respawn
+Player:GetPropertyChangedSignal("Character"):Connect(function()
+    task.wait(1)
+    BehavioralData.ShotsFired = 0
+    BehavioralData.HitsLanded = 0
+    BehavioralData.HSKills = 0
+    BehavioralData.TotalKills = 0
+    UpdateESP()
+end)
+
+-- ============================================================
+-- ALL ANTI-DETECTION IS ALREADY RUNNING IN BACKGROUND
+-- No GUI traces. No visible indicators. Fully silent.
+-- ============================================================
