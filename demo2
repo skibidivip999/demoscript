@@ -1,439 +1,871 @@
-
--- ╔══════════════════════════════════════════════════════════╗
--- ║     RIVALS FULL | NYX EDITION — 11 FEATURES UPDATE      ║
--- ║  Bypass · Aimbot · SilentAim · Wallbang · Rapidfire     ║
--- ║  Triggerbot · Autoshoot · SkyChg · AutoQueue / Grind    ║
--- ╚══════════════════════════════════════════════════════════╝
+-- ╔══════════════════════════════════════════════════════════════╗
+-- ║      RIVALS | NYX EDITION — v3.0 | NEVERLOSE UI             ║
+-- ╚══════════════════════════════════════════════════════════════╝
 
 -- ══════════════════════════════════════
--- BYPASS (Layer 1-10) — GIỮ NGUYÊN
+-- SERVICES
 -- ══════════════════════════════════════
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
+local Players           = game:GetService("Players")
+local RunService        = game:GetService("RunService")
+local TweenService      = game:GetService("TweenService")
+local UserInputService  = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local CoreGui = game:GetService("CoreGui")
-local Lighting = game:GetService("Lighting")
-local Workspace = game:GetService("Workspace")
+local CoreGui           = game:GetService("CoreGui")
+local Lighting          = game:GetService("Lighting")
 
 local LocalPlayer = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
-
--- [BYPASS MODULE — FULL 10 LAYER]
-local HIDDEN_GLOBALS = {"syn","fluxus","krnl","electron","wave","oxygen","evon","getrawmetatable","hookmetamethod","getrunningscripts","getscripts","identifyexecutor","getexecutorname","http_request","request","decompile","getproto","getgc","getinstances","newcclosure","checkcaller"}
-
-pcall(function() local env=getfenv(0); local meta=getrawmetatable(env); if meta and meta.__index then local old=meta.__index; meta.__index=newcclosure(function(s,k) if not checkcaller() then for _,g in ipairs(HIDDEN_GLOBALS) do if k==g then return nil end end end return old(s,k) end) end end end)
-
-pcall(function() if getrunningscripts then local _o=hookfunction(getrunningscripts,newcclosure(function() local l=_o(); local f={}; for _,s in ipairs(l) do if s and (not getcallingscript or s~=getcallingscript()) then table.insert(f,s) end end return f end)) end end)
-pcall(function() if getscripts then local _o=hookfunction(getscripts,newcclosure(function() local l=_o(); local f={}; for _,s in ipairs(l) do if s and (not getfenv(0).script or s~=getfenv(0).script) then table.insert(f,s) end end return f end)) end end)
-
-local BLOCKED_PATTERNS={"detect","cheat","hack","exploit","executor","ban","kick","punish","warn","report","flag","log","audit","record","anticheat","anti_cheat","byfron","hyperion","integrity","validate","verify","sanity","clientcheck","speedcheck","positioncheck","aimcheck"}
-
-pcall(function()
-    local old=hookmetamethod(game,"__namecall",newcclosure(function(self,...)
-        local m=getnamecallmethod()
-        local n=tostring(self.Name):lower()
-        if m=="FireServer" or m=="InvokeServer" or m=="FireAllClients" or m=="FireClient" then
-            for _,p in ipairs(BLOCKED_PATTERNS) do if n:find(p) then return (m=="InvokeServer" and true or nil) end end
-        end
-        if m=="Kick" and self==LocalPlayer then return nil end
-        return old(self,...)
-    end))
-end)
-
-pcall(function() if debug and debug.getinfo then local _o=debug.getinfo; debug.getinfo=newcclosure(function(...) local i=_o(...); if i and i.source and not checkcaller() and (tostring(i.source):find("nyx") or tostring(i.source):find("bypass")) then i.source="[C]"; i.short_src="[C]" end return i end) end end)
-pcall(function() if LocalPlayer.Kick then hookfunction(LocalPlayer.Kick,function() return end) end end)
-pcall(function() setidentity(8) end)
+local Camera      = workspace.CurrentCamera
+local Mouse       = LocalPlayer:GetMouse()
 
 -- ══════════════════════════════════════
 -- CONFIG
 -- ══════════════════════════════════════
 local Config = {
-    AimbotEnabled=true, AimbotKey=Enum.KeyCode.Q, AimbotPart="Head", AimbotSmooth=0.12, AimbotFOV=180,
-    SilentAimEnabled=true, SilentAimFOV=220, SilentAimFOVColor=Color3.fromRGB(255,60,0), SilentAimThickness=2,
-    TriggerbotEnabled=true, AutoShootEnabled=true, RapidFireEnabled=true, RapidFireRate=12,
-    WallbangEnabled=true, PredictionEnabled=true, AutoReload=true, ReloadSpeedMult=2.5,
-    TeamCheckEnabled=true,
-    SkyChangerEnabled=true, SkyChoice="Night",
-    AutoQueueEnabled=true, AutoPlayEnabled=true,
-    FPSUnlockEnabled=true, TargetFPS=60,
-    BlockyEnabled=false,
-    AntiDetectionEnabled=true, AntiBanEnabled=true,
+    AimbotEnabled      = false,
+    AimbotKey          = Enum.KeyCode.Q,
+    AimbotPart         = "Head",
+    AimbotSmooth       = 0.15,
+    AimbotFOV          = 150,
+    PredictionOn       = true,
+    PredictionStrength = 0.12,
+
+    SilentAimEnabled   = false,
+    SilentAimFOV       = 200,
+    SilentAimFOVColor  = Color3.fromRGB(255, 80, 0),
+    SilentAimThickness = 1.5,
+
+    TriggerbotEnabled  = false,
+    TriggerbotDelay    = 0.06,
+
+    AutoShootEnabled   = false,
+    AutoShootDelay     = 0.12,
+
+    RapidFireEnabled   = false,
+    FireRate           = 0.04,
+
+    WallbangEnabled    = false,
+
+    FasterReloadEnabled = false,
+
+    TeamCheckEnabled   = true,
+
+    SkyPreset          = "Default",
+    BlockyEnabled      = false,
+
+    FPSUnlockEnabled   = false,
+    TargetFPS          = 60,
+
+    AutoQueueEnabled   = false,
+    AutoPlayEnabled    = false,
+
+    AntiDetectionEnabled = true,
+    AntiBanEnabled       = true,
 }
 
 -- ══════════════════════════════════════
--- UTILS
+-- ANTI-CHEAT BYPASS — 10 LAYERS
 -- ══════════════════════════════════════
-local Mouse = LocalPlayer:GetMouse()
-local Camera = Workspace.CurrentCamera
-
-local function getTarget(fov)
-    local best, bestDist = nil, fov
-    local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr==LocalPlayer then continue end
-        if Config.TeamCheckEnabled and plr.Team==LocalPlayer.Team then continue end
-        local char=plr.Character; if not char then continue end
-        local part=char:FindFirstChild(Config.AimbotPart) or char:FindFirstChild("HumanoidRootPart")
-        if not part then continue end
-        local hum=char:FindFirstChildOfClass("Humanoid"); if not hum or hum.Health<=0 then continue end
-        local sp,onScreen=Camera:WorldToViewportPoint(part.Position); if not onScreen then continue end
-        local dist=(Vector2.new(sp.X,sp.Y)-center).Magnitude
-        if dist<bestDist then bestDist=dist; best=plr end
-    end
-    return best
-end
-
-local function getPartInWorld(pos, ignoreList)
-    -- Raycast with ignore for wallbang
-    local ray = Ray.new(Camera.CFrame.Position, (pos-Camera.CFrame.Position).Unit*500)
-    local hit, posHit, normal = Workspace:FindPartOnRayWithIgnoreList(ray, ignoreList or {Camera, LocalPlayer.Character}, false, true)
-    return hit
-end
-
-local fovCircle = Drawing.new("Circle")
-fovCircle.Visible=false; fovCircle.Color=Config.SilentAimFOVColor; fovCircle.Radius=Config.SilentAimFOV; fovCircle.Thickness=Config.SilentAimThickness; fovCircle.Filled=false; fovCircle.NumSides=100; fovCircle.Position=Vector2.new(Camera.ViewportSize.X/2,Camera.ViewportSize.Y/2)
-
--- ═══════ WALLBANG (rewritten) ═══════
-local wallbangHits = {}
-
-local function doWallbang()
-    if not Config.WallbangEnabled then return end
-    -- Instead of blocking hit, we detect if target is behind wall and send ray through
-    local target = getTarget(Config.SilentAimFOV or 300)
-    if not target or not target.Character then return end
-    local char = target.Character
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hum or hum.Health<=0 then return end
-
-    -- Build ignore list for wallbang: ignore all parts except target's torso/head
-    local ignore = {Camera}
-    if LocalPlayer.Character then
-        for _, p in ipairs(LocalPlayer.Character:GetDescendants()) do
-            table.insert(ignore, p)
-        end
-    end
-
-    -- Check if direct ray blocked
-    local part = char:FindFirstChild(Config.AimbotPart) or char:FindFirstChild("HumanoidRootPart")
-    if part then
-        local toTarget = (part.Position - Camera.CFrame.Position).Unit
-        local ray = Ray.new(Camera.CFrame.Position, toTarget*500)
-        local hit = Workspace:FindPartOnRayWithIgnoreList(ray, ignore, false, true)
-
-        if hit and hit:IsA("BasePart") and not hit:IsDescendantOf(char) then
-            -- Blocked by wall. Try wallbang: find closest point on target collider through wall
-            -- For Rivals-style games, wallbang works by sending damage through thin parts
-            -- We'll just set our mouse target to enemy part regardless of wall
-            -- Silent aim handles the rest; this is explicit wallbang flag
-            table.insert(wallbangHits, {target=target, time=os.clock()})
-        end
-    end
-end
-
--- ═══════ SKY CHANGER ═══════
-local skyOptions = {
-    Night = {Ambient=Color3.fromRGB(30,30,50), Brightness=0.5, Exposure=1.2, Skybox="rbxassetid://"},
-    Sunset = {Ambient=Color3.fromRGB(120,60,30), Brightness=0.8, Exposure=1.5, Skybox="rbxassetid://"},
-    Blue = {Ambient=Color3.fromRGB(20,40,90), Brightness=1.0, Exposure=1.8, Skybox="rbxassetid://"},
-    Red = {Ambient=Color3.fromRGB(90,20,20), Brightness=1.2, Exposure=2.0, Skybox="rbxassetid://"},
+local BLOCKED = {
+    "detect","cheat","hack","exploit","executor",
+    "ban","kick","punish","warn","suspend",
+    "report","flag","anticheat","anti_cheat",
+    "integrity","validate","sanity","clientcheck",
+    "speedcheck","aimcheck","positioncheck","watchdog",
 }
 
-local function applySky()
-    if not Config.SkyChangerEnabled then return end
-    local s = skyOptions[Config.SkyChoice] or skyOptions.Night
-    Lighting.Ambient = s.Ambient
-    Lighting.Brightness = s.Brightness
-    Lighting.OutdoorAmbient = s.Ambient
-    Lighting.ColorShift_Top = s.Ambient
-    Lighting.EnvironmentDiffuseScale = 0.8
-    -- Try to set sky if available
-    local sky = Lighting:FindFirstChildOfClass("Sky")
-    if sky then
-        sky.SkyboxBk = s.Skybox; sky.SkyboxDn = s.Skybox; sky.SkyboxFt = s.Skybox; sky.SkyboxLf = s.Skybox; sky.SkyboxRt = s.Skybox; sky.SkyboxUp = s.Skybox
+pcall(function()
+    local _nc
+    _nc = hookmetamethod(game, "__namecall", newcclosure(function(self,...)
+        local m    = getnamecallmethod()
+        local name = tostring(self.Name):lower()
+        if m == "FireServer" or m == "InvokeServer" then
+            for _,p in ipairs(BLOCKED) do
+                if name:find(p) then return m=="InvokeServer" and true or nil end
+            end
+        end
+        if m == "Kick" and self == LocalPlayer then return end
+        return _nc(self,...)
+    end))
+end)
+
+pcall(function()
+    if getrunningscripts then
+        local _g; _g = hookfunction(getrunningscripts, newcclosure(function()
+            local o={}
+            for _,s in ipairs(_g()) do
+                if pcall(function() return s.Parent~=nil end) then table.insert(o,s) end
+            end
+            return o
+        end))
     end
-end
+end)
 
--- ═══════ SKIN UNLOCKER ═══════
-local function unlockAllSkins()
-    pcall(function()
-        for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
-            local n = obj.Name:lower()
-            if n:find("unlock") or n:find("skin") or n:find("cosmetic") or n:find("inventory") or n:find("icon") or n:find("effect") then
-                if obj:IsA("RemoteFunction") then pcall(function() obj:InvokeServer("unlock_all") end) end
-                if obj:IsA("RemoteEvent") then pcall(function() obj:FireServer("unlock_all") end) end
-            end
-        end
-        local data = LocalPlayer:FindFirstChild("PlayerData") or LocalPlayer:FindFirstChild("Data")
-        if data then
-            for _, item in ipairs(data:GetDescendants()) do
-                if item:IsA("BoolValue") and (item.Name:lower():find("owned") or item.Name:lower():find("unlocked") or item.Name:lower():find("purchased")) then item.Value = true end
-                if item:IsA("NumberValue") and (item.Name:lower():find("coins") or item.Name:lower():find("cash") or item.Name:lower():find("currency")) then item.Value = 999999 end
-            end
-        end
-    end)
-end
+pcall(function() setidentity(8) end)
+pcall(function()
+    if identifyexecutor then hookfunction(identifyexecutor,newcclosure(function() return "RobloxStudio","0.0.0" end)) end
+end)
 
--- ═══════ FAST RELOAD ═══════
-local reloadHooked = false
-local function hookReload()
-    if reloadHooked then return end
-    reloadHooked = true
-    -- Hook reload animation/remotes to speed up
-    for _, obj in ipairs(game:GetDescendants()) do
-        if obj:IsA("RemoteEvent") and (tostring(obj.Name):lower():find("reload") or tostring(obj.Name):lower():find("equip") or tostring(obj.Name):lower():find("weapon")) then
+pcall(function()
+    local HIDE = {"syn","fluxus","krnl","hookmetamethod","hookfunction","getrawmetatable","newcclosure","getrunningscripts","identifyexecutor"}
+    local _oi; _oi = hookmetamethod(game,"__index",newcclosure(function(self,key)
+        if not checkcaller() then for _,h in ipairs(HIDE) do if key==h then return nil end end end
+        return _oi(self,key)
+    end))
+end)
+
+pcall(function()
+    if debug and debug.getinfo then
+        local _d=debug.getinfo
+        debug.getinfo=newcclosure(function(l,w)
+            local i=_d(l,w)
+            if i and not checkcaller() and i.source and tostring(i.source):lower():find("nyx") then
+                i.source="[C]"; i.what="C"
+            end
+            return i
+        end)
+    end
+end)
+
+pcall(function()
+    if getconnections then
+        local _gc; _gc=hookfunction(getconnections,newcclosure(function(sig)
+            local o={}
+            for _,c in ipairs(_gc(sig)) do
+                local hide=false
+                pcall(function()
+                    local info=debug.getinfo and debug.getinfo(c.Function,"S")
+                    if info and tostring(info.source):lower():find("nyx") then hide=true end
+                end)
+                if not hide then table.insert(o,c) end
+            end
+            return o
+        end))
+    end
+end)
+
+task.spawn(function()
+    task.wait(2)
+    local function neu(root)
+        for _,obj in ipairs(root:GetDescendants()) do
             pcall(function()
-                local old = obj.FireServer
-                hookfunction(old, newcclosure(function(self, ...)
-                    -- If rapidfire/autoshoot active, don't block; just pass through with fake fast timing
-                    return old(self, ...)
-                end))
-            end)
-        end
-    end
-    -- Speed up animation via Humanoid if present
-    if LocalPlayer.Character then
-        task.spawn(function()
-            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum.Died:Connect(function() reloadHooked = false end)
-            end
-        end)
-    end
-end
-
--- ═══════ AUTO QUEUE / AUTOPLAY ═══════
-local autoQueueActive = false
-local autoPlayActive = false
-
-local function autoQueueLoop()
-    if not Config.AutoQueueEnabled then return end
-    -- Auto accept queue every few seconds if in menu
-    while Config.AutoQueueEnabled and not Config.AutoPlayEnabled do
-        task.wait(3)
-        pcall(function()
-            -- Try to fire queue accept remote common names
-            for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
-                if obj:IsA("RemoteEvent") then
-                    local n = obj.Name:lower()
-                    if n:find("queue") or n:find("match") or n:find("join") or n:find("play") or n:find("start") then
-                        pcall(function() obj:FireServer() end)
-                    end
-                end
-            end
-        end)
-    end
-end
-
-local function autoPlayLoop()
-    -- Overnight grinding: loop match, play, restart
-    if not Config.AutoPlayEnabled then return end
-    while Config.AutoPlayEnabled do
-        task.wait(5)
-        -- Auto queue accept
-        pcall(function()
-            for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
-                if obj:IsA("RemoteEvent") and (tostring(obj.Name):lower():find("queue") or tostring(obj.Name):lower():find("match")) then
-                    pcall(function() obj:FireServer() end)
-                end
-            end
-        end)
-        -- Auto restart / respawn if dead
-        pcall(function()
-            if LocalPlayer.Character then
-                local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if hum and hum.Health <= 0 then
-                    -- Auto respawn via remote if exists
-                    for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
-                        if obj:IsA("RemoteEvent") and tostring(obj.Name):lower():find("respawn") then pcall(function() obj:FireServer() end) end
-                    end
-                end
-            end
-        end)
-    end
-end
-
--- ═══════ RAPIDFIRE ═══════
-local rapidFireTick = 0
-RunService.RenderStepped:Connect(function()
-    if Config.RapidFireEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
-        rapidFireTick += 1
-        if rapidFireTick % math.max(1, math.floor(60/Config.RapidFireRate)) == 0 then
-            pcall(function()
-                if Mouse and Mouse.Button1Down then
-                    -- Fire shoot remote if available
-                    for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
-                        if obj:IsA("RemoteEvent") and (tostring(obj.Name):lower():find("shoot") or tostring(obj.Name):lower():find("fire") or tostring(obj.Name):lower():find("attack") or tostring(obj.Name):lower():find("hit")) then
-                            pcall(function() obj:FireServer({}) end)
+                local n=obj.Name:lower()
+                for _,p in ipairs({"anticheat","watchdog","monitor","detector"}) do
+                    if n:find(p) then
+                        for _,c in ipairs(obj:GetDescendants()) do
+                            if c:IsA("Script") or c:IsA("LocalScript") then c.Disabled=true end
                         end
                     end
                 end
             end)
         end
-    else
-        rapidFireTick = 0
+    end
+    neu(workspace); neu(ReplicatedStorage)
+    workspace.DescendantAdded:Connect(function(obj)
+        task.wait(0.1)
+        pcall(function()
+            local n=obj.Name:lower()
+            for _,p in ipairs({"anticheat","watchdog","detector"}) do
+                if n:find(p) then for _,c in ipairs(obj:GetDescendants()) do if c:IsA("Script") or c:IsA("LocalScript") then c.Disabled=true end end end
+            end
+        end)
+    end)
+end)
+
+pcall(function()
+    if os and os.clock then
+        local _oc=os.clock
+        os.clock=newcclosure(function() return _oc()+(math.random()-0.5)*0.00008 end)
     end
 end)
 
--- ═══════ TRIGGERBOT ═══════
-local triggerBotTick = 0
-RunService.RenderStepped:Connect(function()
-    if Config.TriggerbotEnabled then
-        -- Check if mouse is over enemy using raycast
-        local ray = Mouse.UnitRay
-        local hit = Workspace:FindPartOnRay(ray, LocalPlayer.Character, false, true)
-        if hit and hit:IsA("BasePart") and hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid") then
-            local hitHum = hit.Parent:FindFirstChildOfClass("Humanoid")
-            if hitHum and hitHum.Health > 0 then
-                -- Check team
-                local plr = Players:GetPlayerFromCharacter(hit.Parent)
-                if plr and (not Config.TeamCheckEnabled or plr.Team ~= LocalPlayer.Team) then
-                    triggerBotTick += 1
-                    if triggerBotTick % 3 == 0 then -- rate limit slightly
-                        pcall(function()
-                            for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
-                                if obj:IsA("RemoteEvent") and (tostring(obj.Name):lower():find("shoot") or tostring(obj.Name):lower():find("fire") or tostring(obj.Name):lower():find("attack") or tostring(obj.Name):lower():find("hit")) then
-                                    pcall(function() obj:FireServer({}) end)
+pcall(function()
+    local _cni; _cni=hookmetamethod(Camera,"__newindex",newcclosure(function(self,key,val)
+        if key=="CFrame" and type(val)=="userdata" then
+            val=val*CFrame.Angles((math.random()-0.5)*0.0002,(math.random()-0.5)*0.0002,0)
+        end
+        return _cni(self,key,val)
+    end))
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(8)
+        pcall(function() hookfunction(LocalPlayer.Kick,newcclosure(function() return end)) end)
+        for _,obj in ipairs(game:GetDescendants()) do
+            pcall(function()
+                if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+                    local n=obj.Name:lower()
+                    for _,p in ipairs({"ban","kick","punish"}) do
+                        if n:find(p) then hookfunction(obj.FireServer,newcclosure(function() return end)) end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- ══════════════════════════════════════
+-- UTILITY
+-- ══════════════════════════════════════
+local function getTarget(fov)
+    local best,bd=nil,fov
+    local cx=Vector2.new(Camera.ViewportSize.X/2,Camera.ViewportSize.Y/2)
+    for _,plr in ipairs(Players:GetPlayers()) do
+        if plr==LocalPlayer then continue end
+        if Config.TeamCheckEnabled and plr.Team==LocalPlayer.Team then continue end
+        local char=plr.Character; if not char then continue end
+        local part=char:FindFirstChild(Config.AimbotPart) or char:FindFirstChild("HumanoidRootPart")
+        if not part then continue end
+        local hum=char:FindFirstChildOfClass("Humanoid")
+        if not hum or hum.Health<=0 then continue end
+        local sp,on=Camera:WorldToViewportPoint(part.Position)
+        if not on then continue end
+        local d=(Vector2.new(sp.X,sp.Y)-cx).Magnitude
+        if d<bd then bd=d; best=plr end
+    end
+    return best
+end
+
+local function predictPos(character,part)
+    if not Config.PredictionOn then return part.Position end
+    local r=character:FindFirstChild("HumanoidRootPart")
+    if not r then return part.Position end
+    return part.Position+r.AssemblyLinearVelocity*(LocalPlayer:GetNetworkPing()+Config.PredictionStrength)
+end
+
+local _ls=0
+local function fireWeapon()
+    local now=tick(); if now-_ls<0.02 then return end; _ls=now
+    local char=LocalPlayer.Character; if not char then return end
+    local tool=char:FindFirstChildOfClass("Tool"); if not tool then return end
+    for _,obj in ipairs(tool:GetDescendants()) do
+        if obj:IsA("RemoteEvent") then
+            local n=obj.Name:lower()
+            if n:find("shoot") or n:find("fire") or n:find("attack") or n:find("bullet") then
+                pcall(function() obj:FireServer() end); return
+            end
+        end
+    end
+    pcall(function() tool:Activate() end)
+    pcall(function() mouse1click() end)
+end
+
+-- RAPID FIRE
+local rapidConn=nil
+local function startRapidFire()
+    if rapidConn then rapidConn:Disconnect() end
+    rapidConn=RunService.Heartbeat:Connect(function()
+        if not Config.RapidFireEnabled then return end
+        local now=tick(); if now-_ls<Config.FireRate then return end
+        local char=LocalPlayer.Character; if not char then return end
+        local tool=char:FindFirstChildOfClass("Tool"); if not tool then return end
+        for _,obj in ipairs(tool:GetDescendants()) do
+            if obj:IsA("RemoteEvent") then
+                local n=obj.Name:lower()
+                if n:find("shoot") or n:find("fire") then
+                    pcall(function() obj:FireServer() end); _ls=now; return
+                end
+            end
+        end
+        for _,v in ipairs(tool:GetDescendants()) do
+            if (v:IsA("NumberValue") or v:IsA("IntValue")) then
+                local n=v.Name:lower()
+                if n:find("cooldown") or n:find("rate") or n:find("delay") then
+                    pcall(function() v.Value=Config.FireRate end)
+                end
+            end
+        end
+    end)
+end
+
+-- WALLBANG
+local wbHooked=false
+local function setupWallbang()
+    if wbHooked then return end; wbHooked=true
+    pcall(function()
+        local _orc=workspace.Raycast
+        workspace.Raycast=function(self,o,d,p)
+            if Config.WallbangEnabled then
+                local nw=RaycastParams.new()
+                nw.FilterType=Enum.RaycastFilterType.Exclude
+                nw.FilterDescendantsInstances={LocalPlayer.Character or Instance.new("Folder")}
+                local r=_orc(self,o,d,nw)
+                if r then
+                    local m=r.Instance:FindFirstAncestorOfClass("Model")
+                    if m then
+                        local pl=Players:GetPlayerFromCharacter(m)
+                        if pl and pl~=LocalPlayer then
+                            if not(Config.TeamCheckEnabled and pl.Team==LocalPlayer.Team) then
+                                local h=m:FindFirstChildOfClass("Humanoid")
+                                if h and h.Health>0 then return r end
+                            end
+                        end
+                    end
+                end
+            end
+            return _orc(self,o,d,p)
+        end
+    end)
+end
+setupWallbang()
+
+-- FASTER RELOAD
+local rlHooked=false
+local function setupFasterReload()
+    if rlHooked then return end; rlHooked=true
+    task.spawn(function()
+        local function hr(obj)
+            if not obj:IsA("RemoteEvent") then return end
+            local n=obj.Name:lower()
+            if not(n:find("reload") or n:find("ammo")) then return end
+            pcall(function()
+                local _o=obj.FireServer
+                hookfunction(_o,newcclosure(function(self,...)
+                    _o(self,...)
+                    if Config.FasterReloadEnabled then
+                        task.delay(0.05,function()
+                            for _,r in ipairs(game:GetDescendants()) do
+                                if r:IsA("RemoteEvent") then
+                                    local rn=r.Name:lower()
+                                    if rn:find("reloaddone") or rn:find("reloadcomplete") or rn:find("finishreload") then
+                                        pcall(function() r:FireServer() end)
+                                    end
                                 end
                             end
                         end)
                     end
+                end))
+            end)
+        end
+        for _,obj in ipairs(game:GetDescendants()) do hr(obj) end
+        game.DescendantAdded:Connect(function(obj) task.wait(0.1); hr(obj) end)
+        LocalPlayer.CharacterAdded:Connect(function(char)
+            local hum=char:WaitForChild("Humanoid")
+            local ani=hum:FindFirstChildOfClass("Animator")
+            if ani then
+                ani.AnimationPlayed:Connect(function(track)
+                    if Config.FasterReloadEnabled then
+                        if track.Animation.AnimationId:lower():find("reload") then
+                            track:AdjustSpeed(3.5)
+                        end
+                    end
+                end)
+            end
+        end)
+    end)
+end
+setupFasterReload()
+
+-- SKY CHANGER
+local SkyPresets = {
+    Default  = {ClockTime=14,  Brightness=2,    Ambient=Color3.fromRGB(100,100,100), FogEnd=100000},
+    Night    = {ClockTime=0,   Brightness=0.5,  Ambient=Color3.fromRGB(25,25,45),    FogEnd=80000},
+    Sunset   = {ClockTime=18,  Brightness=1.5,  Ambient=Color3.fromRGB(170,80,40),   FogEnd=90000},
+    Midnight = {ClockTime=0,   Brightness=0.08, Ambient=Color3.fromRGB(8,8,25),      FogEnd=60000},
+    Bright   = {ClockTime=12,  Brightness=3.5,  Ambient=Color3.fromRGB(150,150,150), FogEnd=100000},
+    Foggy    = {ClockTime=10,  Brightness=0.8,  Ambient=Color3.fromRGB(160,160,160), FogEnd=30000},
+}
+local function changeSky(p)
+    local d=SkyPresets[p]; if not d then return end
+    TweenService:Create(Lighting,TweenInfo.new(1.4,Enum.EasingStyle.Quad),{
+        ClockTime=d.ClockTime, Brightness=d.Brightness,
+        Ambient=d.Ambient, FogEnd=d.FogEnd,
+    }):Play()
+end
+
+-- SKIN UNLOCKER
+local function unlockAllCosmetics()
+    pcall(function()
+        for _,obj in ipairs(game:GetDescendants()) do
+            local n=obj.Name:lower()
+            if n:find("unlock") or n:find("skin") or n:find("cosmetic")
+            or n:find("inventory") or n:find("icon") or n:find("effect")
+            or n:find("hat") or n:find("trail") or n:find("emote") then
+                if obj:IsA("RemoteFunction") then pcall(function() obj:InvokeServer("unlock_all") end)
+                elseif obj:IsA("RemoteEvent") then
+                    pcall(function() obj:FireServer("unlock_all") end)
+                    pcall(function() obj:FireServer(true) end)
                 end
             end
-        else
-            triggerBotTick = 0
+        end
+        local data=LocalPlayer:FindFirstChild("PlayerData") or LocalPlayer:FindFirstChild("Data") or LocalPlayer:FindFirstChild("Inventory")
+        if data then
+            for _,item in ipairs(data:GetDescendants()) do
+                if item:IsA("BoolValue") then
+                    local n=item.Name:lower()
+                    if n:find("owned") or n:find("unlocked") or n:find("purchased") or n:find("has") then item.Value=true end
+                end
+                if item:IsA("NumberValue") then
+                    local n=item.Name:lower()
+                    if n:find("coins") or n:find("cash") or n:find("gems") then item.Value=999999 end
+                end
+            end
+        end
+    end)
+end
+
+-- BLOCKY CHARACTER
+local charConn=nil
+local function applyBlocky(char)
+    if not char then return end
+    task.wait(0.6)
+    for _,part in ipairs(char:GetDescendants()) do
+        if part:IsA("SpecialMesh") then
+            local p=part.Parent
+            if p and p:IsA("BasePart") and p.Name~="Head" then
+                part.MeshType=Enum.MeshType.Brick; part.Scale=Vector3.new(1,1,1); part.MeshId=""; part.TextureId=""
+            end
+        end
+        if part:IsA("MeshPart") and part.Name~="Head" then
+            local sm=part:FindFirstChildOfClass("SpecialMesh") or Instance.new("SpecialMesh",part)
+            sm.MeshType=Enum.MeshType.Brick; sm.Scale=Vector3.new(1,1,1)
         end
     end
-end)
-
--- ═══════ AUTOSHOOT ═══════
-local autoShootHeld = false
-UserInputService.InputBegan:Connect(function(inp, gp)
-    if gp then return end
-    if Config.AutoShootEnabled and inp.UserInputType == Enum.UserInputType.MouseButton1 then
-        autoShootHeld = true
+    local head=char:FindFirstChild("Head")
+    if head then
+        local hm=head:FindFirstChildOfClass("SpecialMesh")
+        if hm then hm.MeshType=Enum.MeshType.Head; hm.MeshId="" end
     end
-end)
-UserInputService.InputEnded:Connect(function(inp)
-    if Config.AutoShootEnabled and inp.UserInputType == Enum.UserInputType.MouseButton1 then
-        autoShootHeld = false
-    end
-end)
+end
+local function enableBlocky()
+    Config.BlockyEnabled=true
+    if LocalPlayer.Character then task.spawn(applyBlocky,LocalPlayer.Character) end
+    charConn=LocalPlayer.CharacterAdded:Connect(function(c) if Config.BlockyEnabled then task.spawn(applyBlocky,c) end end)
+end
+local function disableBlocky()
+    Config.BlockyEnabled=false
+    if charConn then charConn:Disconnect(); charConn=nil end
+    LocalPlayer:LoadCharacter()
+end
 
-RunService.RenderStepped:Connect(function()
-    if Config.AutoShootEnabled and autoShootHeld then
-        -- Continuous fire while holding
-        pcall(function()
-            for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
-                if obj:IsA("RemoteEvent") and (tostring(obj.Name):lower():find("shoot") or tostring(obj.Name):lower():find("fire") or tostring(obj.Name):lower():find("attack") or tostring(obj.Name):lower():find("hit")) then
-                    pcall(function() obj:FireServer({}) end)
+-- FPS UNLOCK
+local function applyFPS(fps)
+    if setfpscap then setfpscap(fps)
+    else pcall(function()
+        settings().Rendering.FrameRateManager=Enum.FramerateManagerMode.On
+        settings().Rendering.MaxFrameRate=fps
+    end) end
+end
+
+-- AUTO QUEUE
+local QBTNS={"PlayButton","QueueButton","Play","Queue","FindMatch","JoinGame","Start","Rematch","PlayAgain","Replay"}
+local function tryQueue()
+    pcall(function()
+        local gui=LocalPlayer.PlayerGui
+        for _,name in ipairs(QBTNS) do
+            local btn=gui:FindFirstChild(name,true)
+            if btn and btn.Visible and (btn:IsA("TextButton") or btn:IsA("ImageButton")) then
+                pcall(function() btn.MouseButton1Click:Fire() end)
+            end
+        end
+        for _,r in ipairs(game:GetDescendants()) do
+            if r:IsA("RemoteEvent") then
+                local n=r.Name:lower()
+                if n:find("queue") or n:find("findmatch") or n:find("joinqueue") or n:find("rematch") then
+                    pcall(function() r:FireServer() end)
                 end
             end
+        end
+    end)
+end
+task.spawn(function()
+    while true do
+        task.wait(3)
+        if Config.AutoQueueEnabled then tryQueue() end
+    end
+end)
+
+-- AUTOPLAY
+local apLast=0
+task.spawn(function()
+    while true do
+        task.wait(0)
+        if not Config.AutoPlayEnabled then task.wait(0.5); continue end
+        pcall(function()
+            local t=getTarget(Config.AimbotFOV); if not t or not t.Character then return end
+            local part=t.Character:FindFirstChild(Config.AimbotPart) or t.Character:FindFirstChild("HumanoidRootPart")
+            if not part then return end
+            local pos=predictPos(t.Character,part)
+            Camera.CFrame=Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position,pos),0.35)
+            local now=tick()
+            if now-apLast>=0.14 then fireWeapon(); apLast=now end
         end)
     end
 end)
 
--- ═══════ PREDICTION / AIMBOT ENHANCED ═══════
-local predictedAim = false
-
-RunService.RenderStepped:Connect(function()
-    -- FOV circle
-    fovCircle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-    fovCircle.Visible = Config.SilentAimEnabled
-    fovCircle.Radius = Config.SilentAimFOV
-    fovCircle.Color = Config.SilentAimFOVColor
-    fovCircle.Thickness = Config.SilentAimThickness
-
-    -- Aimbot with prediction (estimate velocity)
-    if Config.AimbotEnabled and UserInputService:IsKeyDown(Config.AimbotKey) then
-        local target = getTarget(Config.AimbotFOV)
-        if target and target.Character then
-            local part = target.Character:FindFirstChild(Config.AimbotPart) or target.Character:FindFirstChild("HumanoidRootPart")
-            if part then
-                local targetPos = part.Position
-                if Config.PredictionEnabled then
-                    -- Simple prediction: assume target moves at ~16 studs/sec
-                    local hum = target.Character:FindFirstChildOfClass("Humanoid")
-                    if hum and hum.MoveDirection.Magnitude > 0 then
-                        targetPos = targetPos + (hum.MoveDirection.Unit * math.abs(hum.WalkSpeed or 16) * 0.05)
-                    end
-                end
-                local goal = CFrame.new(Camera.CFrame.Position, targetPos)
-                Camera.CFrame = Camera.CFrame:Lerp(goal, Config.AimbotSmooth)
-            end
-        end
-    end
-
-    -- SilentAim mouse hook (already done earlier but re-ensure)
-    -- Wallbang check
-    doWallbang()
-end)
-
--- ═══════ AUTO QUEUE / AUTO PLAY ═══════
-task.spawn(autoQueueLoop)
-task.spawn(autoPlayLoop)
-
--- ═══════ BLOCKY + SKIN + SKY + RELOAD ═══════
-local charConn = nil
-local function applyBlocky(character)
-    if not character then return end
-    task.wait(0.6)
-    for _, part in ipairs(character:GetDescendants()) do
-        if part:IsA("SpecialMesh") then
-            local parent = part.Parent
-            if parent and parent:IsA("BasePart") and parent.Name ~= "Head" then
-                part.MeshType = Enum.MeshType.Brick; part.Scale = Vector3.new(1,1,1); part.MeshId=""; part.TextureId=""
-            end
-        end
-        if part:IsA("MeshPart") and part.Name ~= "Head" then
-            local sm = part:FindFirstChildOfClass("SpecialMesh")
-            if not sm then sm = Instance.new("SpecialMesh"); sm.Parent = part end
-            sm.MeshType = Enum.MeshType.Brick; sm.Scale = Vector3.new(1,1,1)
-        end
-    end
-    local head = character:FindFirstChild("Head")
-    if head then local hm = head:FindFirstChildOfClass("SpecialMesh"); if hm then hm.MeshType = Enum.MeshType.Head; hm.MeshId="" end end
+-- TRIGGERBOT
+local lastTrig=0
+local function checkTrigger()
+    if not Config.TriggerbotEnabled then return end
+    local now=tick(); if now-lastTrig<Config.TriggerbotDelay then return end
+    local ray=Camera:ScreenPointToRay(Camera.ViewportSize.X/2,Camera.ViewportSize.Y/2)
+    local p=RaycastParams.new()
+    p.FilterType=Enum.RaycastFilterType.Exclude
+    p.FilterDescendantsInstances={LocalPlayer.Character or Instance.new("Folder")}
+    local r=workspace:Raycast(ray.Origin,ray.Direction*1500,p)
+    if not r then return end
+    local m=r.Instance:FindFirstAncestorOfClass("Model"); if not m then return end
+    local pl=Players:GetPlayerFromCharacter(m)
+    if not pl or pl==LocalPlayer then return end
+    if Config.TeamCheckEnabled and pl.Team==LocalPlayer.Team then return end
+    local h=m:FindFirstChildOfClass("Humanoid")
+    if not h or h.Health<=0 then return end
+    lastTrig=now; fireWeapon()
 end
 
-local function enableBlocky()
-    Config.BlockyEnabled = true
-    local char = LocalPlayer.Character
-    if char then task.spawn(applyBlocky, char) end
-    charConn = LocalPlayer.CharacterAdded:Connect(function(newChar)
-        if Config.BlockyEnabled then task.spawn(applyBlocky, newChar) end
-    end)
+-- AUTO SHOOT
+local lastAS=0
+local function checkAutoShoot()
+    if not Config.AutoShootEnabled then return end
+    local now=tick(); if now-lastAS<Config.AutoShootDelay then return end
+    lastAS=now; fireWeapon()
 end
 
-local function disableBlocky()
-    Config.BlockyEnabled = false; if charConn then charConn:Disconnect(); charConn = nil end; LocalPlayer:LoadCharacter()
-end
+-- FOV CIRCLE
+local fovCircle=Drawing.new("Circle")
+fovCircle.Visible=false; fovCircle.Radius=200; fovCircle.Thickness=1.5
+fovCircle.Filled=false; fovCircle.NumSides=100
+fovCircle.Color=Config.SilentAimFOVColor
+fovCircle.Position=Vector2.new(Camera.ViewportSize.X/2,Camera.ViewportSize.Y/2)
 
--- Apply initial settings
-task.spawn(function()
-    task.wait(1)
-    applySky()
-    unlockAllSkins()
-    hookReload()
-    if Config.BlockyEnabled then enableBlocky() end
-end)
-
--- ═══════ MOUSE SILENT AIM HOOK ═══════
-local oldMouseMeta
+-- SILENT AIM
+local _mm
 pcall(function()
-    oldMouseMeta = hookmetamethod(Mouse, "__index", newcclosure(function(self, key)
+    _mm=hookmetamethod(Mouse,"__index",newcclosure(function(self,key)
         if Config.SilentAimEnabled then
-            local target = getTarget(Config.SilentAimFOV)
-            if target and target.Character then
-                local part = target.Character:FindFirstChild(Config.AimbotPart) or target.Character:FindFirstChild("HumanoidRootPart")
+            local t=getTarget(Config.SilentAimFOV)
+            if t and t.Character then
+                local part=t.Character:FindFirstChild(Config.AimbotPart) or t.Character:FindFirstChild("HumanoidRootPart")
                 if part then
-                    if key == "Hit" then return CFrame.new(part.Position) end
-                    if key == "Target" then return part end
+                    local pos=predictPos(t.Character,part)
+                    if key=="Hit" then return CFrame.new(pos) end
+                    if key=="Target" then return part end
                 end
             end
         end
-        return oldMouseMeta(self, key)
+        return _mm(self,key)
     end))
 end)
 
-print("[NYX FULL] All 11 features loaded.")
+-- AIMBOT LOOP
+RunService.RenderStepped:Connect(function(dt)
+    fovCircle.Position=Vector2.new(Camera.ViewportSize.X/2,Camera.ViewportSize.Y/2)
+    fovCircle.Visible=Config.SilentAimEnabled
+    fovCircle.Radius=Config.SilentAimFOV
+    fovCircle.Color=Config.SilentAimFOVColor
+    fovCircle.Thickness=Config.SilentAimThickness
+
+    if Config.AimbotEnabled and UserInputService:IsKeyDown(Config.AimbotKey) then
+        local t=getTarget(Config.AimbotFOV)
+        if t and t.Character then
+            local part=t.Character:FindFirstChild(Config.AimbotPart) or t.Character:FindFirstChild("HumanoidRootPart")
+            if part then
+                local pos=predictPos(t.Character,part)
+                Camera.CFrame=Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position,pos),Config.AimbotSmooth)
+            end
+        end
+    end
+
+    checkTrigger()
+    checkAutoShoot()
+end)
+
+-- ══════════════════════════════════════════════════════════════
+-- NEVERLOSE UI — FULL BUILD
+-- ══════════════════════════════════════════════════════════════
+local NL = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/Mana42138/Neverlose-UI/main/Source.lua"
+))()
+
+local Win = NL:Window({
+    Title  = "NN HUB",
+    CFG    = "NNRivals",
+    Key    = Enum.KeyCode.H,
+})
+
+NL:Notify({ Text = "NN v1.0 loaded — all systems active", Time = 4 })
+
+-- ══════════════════════════════
+-- TAB SECTION: COMBAT
+-- ══════════════════════════════
+local CombatSection = Win:TSection("Combat")
+
+-- ── TAB: AIMBOT ────────────────
+local AimbotTab = CombatSection:Tab("Aimbot")
+
+local AimbotSec = AimbotTab:Section("Aimbot")
+AimbotSec:Toggle("Enable Aimbot  (hold Q)", function(v)
+    Config.AimbotEnabled = v
+end)
+
+local PredSec = AimbotTab:Section("Prediction")
+PredSec:Toggle("Velocity Prediction", function(v)
+    Config.PredictionOn = v
+end)
+PredSec:Slider("Prediction Strength", 1, 50, 12, function(v)
+    Config.PredictionStrength = v / 100
+end)
+
+local AimbotCfg = AimbotTab:Section("Config")
+AimbotCfg:Slider("FOV", 50, 600, 150, function(v)
+    Config.AimbotFOV = v
+end)
+AimbotCfg:Slider("Smoothness", 1, 20, 3, function(v)
+    Config.AimbotSmooth = v / 20
+end)
+AimbotCfg:Dropdown("Aim Part", {
+    "Head","Torso","HumanoidRootPart","LeftArm","RightArm","LeftLeg","RightLeg"
+}, function(v)
+    Config.AimbotPart = v
+end)
+
+-- ── TAB: SILENT AIM ────────────
+local SilentTab = CombatSection:Tab("Silent Aim")
+
+local SilentSec = SilentTab:Section("Silent Aim")
+SilentSec:Toggle("Enable Silent Aim", function(v)
+    Config.SilentAimEnabled = v
+    fovCircle.Visible = v
+end)
+
+local SilentCfg = SilentTab:Section("FOV Circle")
+SilentCfg:Slider("FOV Size", 50, 600, 200, function(v)
+    Config.SilentAimFOV = v
+end)
+SilentCfg:Slider("Thickness", 1, 6, 2, function(v)
+    Config.SilentAimThickness = v
+    fovCircle.Thickness = v
+end)
+
+-- ── TAB: TRIGGERBOT ────────────
+local TriggerTab = CombatSection:Tab("Triggerbot")
+
+local TrigSec = TriggerTab:Section("Triggerbot")
+TrigSec:Toggle("Enable Triggerbot", function(v)
+    Config.TriggerbotEnabled = v
+end)
+
+local TrigCfg = TriggerTab:Section("Config")
+TrigCfg:Slider("Trigger Delay (ms)", 1, 30, 6, function(v)
+    Config.TriggerbotDelay = v / 100
+end)
+
+-- ── TAB: AUTO SHOOT ────────────
+local AutoShootTab = CombatSection:Tab("Auto Shoot")
+
+local ASec = AutoShootTab:Section("Auto Shoot")
+ASec:Toggle("Enable Auto Shoot", function(v)
+    Config.AutoShootEnabled = v
+end)
+
+local ASCfg = AutoShootTab:Section("Config")
+ASCfg:Slider("Shoot Delay (ms)", 1, 50, 12, function(v)
+    Config.AutoShootDelay = v / 100
+end)
+
+-- ══════════════════════════════
+-- TAB SECTION: WEAPONS
+-- ══════════════════════════════
+local WeaponsSection = Win:TSection("Weapons")
+
+-- ── TAB: RAPID FIRE ────────────
+local RapidTab = WeaponsSection:Tab("Rapid Fire")
+
+local RFSec = RapidTab:Section("Rapid Fire")
+RFSec:Toggle("Enable Rapid Fire", function(v)
+    Config.RapidFireEnabled = v
+    if v then startRapidFire()
+    elseif rapidConn then rapidConn:Disconnect() end
+end)
+
+local RFCfg = RapidTab:Section("Config")
+RFCfg:Slider("Fire Rate (ms)", 1, 20, 4, function(v)
+    Config.FireRate = v / 100
+end)
+
+-- ── TAB: WALLBANG ──────────────
+local WallbangTab = WeaponsSection:Tab("Wallbang")
+
+local WBSec = WallbangTab:Section("Wallbang")
+WBSec:Toggle("Enable Wallbang", function(v)
+    Config.WallbangEnabled = v
+    if v then
+        NL:Notify({ Text = "Wallbang ON · bullets pierce walls", Time = 2 })
+    end
+end)
+
+local WBInfo = WallbangTab:Section("Info")
+WBInfo:Toggle("Team Check (exclude teammates)", function(v)
+    Config.TeamCheckEnabled = v
+end)
+
+-- ── TAB: RELOAD ────────────────
+local ReloadTab = WeaponsSection:Tab("Faster Reload")
+
+local RLSec = ReloadTab:Section("Reload")
+RLSec:Toggle("Enable Faster Reload", function(v)
+    Config.FasterReloadEnabled = v
+end)
+
+local RLInfo = ReloadTab:Section("Info")
+RLInfo:Toggle("Animation Speed x3.5", function(v) end)
+
+-- ══════════════════════════════
+-- TAB SECTION: PLAYER
+-- ══════════════════════════════
+local PlayerSection = Win:TSection("Player")
+
+-- ── TAB: COSMETICS / SKIN ──────
+local SkinTab = PlayerSection:Tab("Skin Unlocker")
+
+local UnlockerSec = SkinTab:Section("Unlocker")
+UnlockerSec:Toggle("Unlock All Skins", function(v)
+    if v then
+        unlockAllCosmetics()
+        NL:Notify({ Text = "Unlock All fired · check inventory", Time = 3 })
+    end
+end)
+UnlockerSec:Toggle("Unlock All Effects", function(v)
+    if v then unlockAllCosmetics() end
+end)
+UnlockerSec:Toggle("Unlock All Icons", function(v)
+    if v then unlockAllCosmetics() end
+end)
+UnlockerSec:Toggle("Unlock All Trails", function(v)
+    if v then unlockAllCosmetics() end
+end)
+
+-- ── TAB: SKY CHANGER ──────────
+local SkyTab = PlayerSection:Tab("Sky Changer")
+
+local SkySec = SkyTab:Section("Sky Preset")
+SkySec:Dropdown("Select Sky", {
+    "Default","Night","Sunset","Midnight","Bright","Foggy"
+}, function(v)
+    changeSky(v)
+    NL:Notify({ Text = "Sky changed → " .. v, Time = 2 })
+end)
+
+local SkyFog = SkyTab:Section("Atmosphere")
+SkyFog:Slider("Brightness", 1, 50, 20, function(v)
+    Lighting.Brightness = v / 10
+end)
+SkyFog:Slider("Clock Time", 0, 24, 14, function(v)
+    Lighting.ClockTime = v
+end)
+
+-- ── TAB: CHARACTER ─────────────
+local CharTab = PlayerSection:Tab("Character")
+
+local CharSec = CharTab:Section("Blocky Character")
+CharSec:Toggle("Blocky Body (head stays normal)", function(v)
+    if v then enableBlocky() else disableBlocky() end
+end)
+
+-- ══════════════════════════════
+-- TAB SECTION: MISC
+-- ══════════════════════════════
+local MiscSection = Win:TSection("Misc")
+
+-- ── TAB: AUTO GRIND ────────────
+local GrindTab = MiscSection:Tab("Auto Grind")
+
+local QueueSec = GrindTab:Section("Auto Queue")
+QueueSec:Toggle("Auto Queue (re-join on match end)", function(v)
+    Config.AutoQueueEnabled = v
+    if v then NL:Notify({ Text = "Auto Queue ON · checking every 3s", Time = 2 }) end
+end)
+
+local PlaySec = GrindTab:Section("Autoplay")
+PlaySec:Toggle("Autoplay (overnight grind)", function(v)
+    Config.AutoPlayEnabled = v
+    if v then NL:Notify({ Text = "Autoplay ON · aim+shoot loop active", Time = 2 }) end
+end)
+
+-- ── TAB: PERFORMANCE ──────────
+local PerfTab = MiscSection:Tab("Performance")
+
+local FPSSec = PerfTab:Section("FPS Unlock")
+FPSSec:Toggle("Unlock FPS Cap", function(v)
+    Config.FPSUnlockEnabled = v
+    applyFPS(v and Config.TargetFPS or 60)
+end)
+FPSSec:Slider("Target FPS", 30, 240, 60, function(v)
+    Config.TargetFPS = v
+    if Config.FPSUnlockEnabled then applyFPS(v) end
+end)
+
+-- ── TAB: PROTECTION ────────────
+local ProtTab = MiscSection:Tab("Protection")
+
+local AntiSec = ProtTab:Section("Anti-Cheat Bypass")
+AntiSec:Toggle("Anti-Detection (10 layers)", function(v)
+    Config.AntiDetectionEnabled = v
+end)
+AntiSec:Toggle("Anti-Ban", function(v)
+    Config.AntiBanEnabled = v
+end)
+
+local BypassInfo = ProtTab:Section("Bypass Status")
+BypassInfo:Toggle("Layer 1: __namecall hook  ✓", function() end)
+BypassInfo:Toggle("Layer 2: Script list spoof  ✓", function() end)
+BypassInfo:Toggle("Layer 3: Executor spoof  ✓", function() end)
+BypassInfo:Toggle("Layer 4: __index hide  ✓", function() end)
+BypassInfo:Toggle("Layer 5: Debug bypass  ✓", function() end)
+BypassInfo:Toggle("Layer 6: Connections hide  ✓", function() end)
+BypassInfo:Toggle("Layer 7: Detector neutralize  ✓", function() end)
+BypassInfo:Toggle("Layer 8: Timing noise  ✓", function() end)
+BypassInfo:Toggle("Layer 9: Camera jitter mask  ✓", function() end)
+BypassInfo:Toggle("Layer 10: Self-protection loop  ✓", function() end)
+
+-- ══════════════════════════════
+-- TAB SECTION: CONFIG
+-- ══════════════════════════════
+local CfgSection = Win:TSection("Config")
+local CfgTab = CfgSection:Tab("CFG Manager")
+
+local SaveSec = CfgTab:Section("Save / Load")
+
+local SaveCFG = SaveSec:Toggle("Save Config", function(v)
+    if v then
+        NL:SaveCfg("NyxRivals")
+        NL:Notify({ Text = "Config saved → NyxRivals", Time = 2 })
+    end
+end)
+spawn(function()
+    while task.wait(0.1) do
+        if SaveCFG then pcall(function() SaveCFG:Set(false) end) end
+    end
+end)
+
+local LoadCFG = SaveSec:Toggle("Load Config", function(v)
+    if v then
+        NL:LoadCfg("NyxRivals")
+        NL:Notify({ Text = "Config loaded → NyxRivals", Time = 2 })
+    end
+end)
+spawn(function()
+    while task.wait(0.1) do
+        if LoadCFG then pcall(function() LoadCFG:Set(false) end) end
+    end
+end)
+
+local CreateCFG = SaveSec:Toggle("Create New Config", function(v)
+    if v then
+        NL:CreateCfg("Rivals")
+        NL:Notify({ Text = "New config created", Time = 2 })
+    end
+end)
+spawn(function()
+    while task.wait(0.1) do
+        if CreateCFG then pcall(function() CreateCFG:Set(false) end) end
+    end
+end)
+
+local SelectSec = CfgTab:Section("Select Config")
+SelectSec:Dropdown("Config Profile", {"NyxRivals","Default","Rage","Legit"}, function(v)
+    pcall(function() NL:LoadCfg(v) end)
+    NL:Notify({ Text = "Profile → " .. v, Time = 2 })
+end)
+
+print("[NN v1.0] Neverlose UI loaded · all features active")
